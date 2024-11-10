@@ -11,6 +11,103 @@ pwd = os.getcwd()
 module_import_path = os.path.join(pwd, "final_as_of_now")
 # interface is in the final_as_of_now folder
 
+from io import BytesIO
+import requests
+import fitz  # PyMuPDF
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+import logging
+from tqdm import tqdm
+def setup_logger():
+    """Set up logging configuration"""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    return logging.getLogger(__name__)
+
+def get_firefox_headers():
+    """Return headers that mimic Firefox browser"""
+    return {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0'
+    }
+
+def create_session_with_retries():
+    """Create a requests session with retry strategy"""
+    session = requests.Session()
+    retries = Retry(
+        total=5,
+        backoff_factor=1,
+        status_forcelist=[500, 502, 503, 504]
+    )
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+    session.headers.update(get_firefox_headers())
+    return session
+def extract_text_from_pdf_url(url):
+    """
+    Extract text from a PDF URL without downloading to disk
+    
+    Args:
+        url (str): URL of the PDF file
+        
+    Returns:
+        str: Extracted text from the PDF
+        
+    Raises:
+        requests.exceptions.RequestException: If download fails
+        fitz.FileDataError: If PDF processing fails
+    """
+    logger = setup_logger()
+    session = create_session_with_retries()
+    
+    try:
+        # Get PDF content with progress bar
+        response = session.get(url, stream=True)
+        response.raise_for_status()
+        total_size = int(response.headers.get('content-length', 0))
+        
+        # Download PDF into memory
+        pdf_data = BytesIO()
+        with tqdm(total=total_size, unit='iB', unit_scale=True,
+                 desc=f"Processing PDF from {url.split('/')[-1]}") as pbar:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    pdf_data.write(chunk)
+                    pbar.update(len(chunk))
+        
+        # Reset BytesIO position
+        pdf_data.seek(0)
+        
+        # Extract text from PDF in memory
+        pdf_document = fitz.open(stream=pdf_data, filetype="pdf")
+        text = ""
+        for page_num in range(len(pdf_document)):
+            page = pdf_document.load_page(page_num)
+            text += page.get_text()
+        
+        logger.info(f"Successfully extracted text from PDF at {url}")
+        return text
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error downloading PDF: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Error processing PDF: {str(e)}")
+        raise
+    finally:
+        if 'pdf_document' in locals():
+            pdf_document.close()
+
 import sys
 sys.path.append(module_import_path)
 import interface
@@ -40,6 +137,7 @@ from langchain.schema import Document
 from langchain.embeddings.base import Embeddings
 from langchain_core.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import SystemMessage
+import tempfile
 ### 3. Agent Prompts
 
 GROQ_API_KEY = "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"  # Replace with your actual API key
@@ -52,6 +150,7 @@ llm = ChatGroq(
     model_name="llama-3.2-90b-text-preview"  
 )
 # Report Generator
+
 report_generator_prompt = """You are a senior equity research analyst tasked with creating a comprehensive investment report.
 
 You have been provided with two key analyses:
@@ -325,87 +424,64 @@ def fetch_financials(ticker):
     doc = next(docs, None).to_dict()  # Get the first document from the iterator
     return doc[ticker]
 class AnnualReportAnalyzer:
-    def __init__(self, ticker, model_name: str = "llama-3.2-90b-text-preview", groq_api_key:str = GROQ_API_KEY):
+    def __init__(self, ticker, model_name: str = "llama-3.2-90b-text-preview", groq_api_key:str = GROQ_API_KEY,curtail_length:int = 10000):
         self.llm = ChatGroq(
             api_key=groq_api_key,   
             temperature=0,
             model_name="llama-3.2-90b-text-preview"
         )
+        self.report_text = extract_text_from_pdf_url(fetch_financials(ticker)["report_url"])[:curtail_length]
         self.ticker = ticker
-        self.setup_retriever_from_firebase(ticker)
-
-    def setup_retriever_from_firebase(self, ticker):
+        self.obtain_ragger()
+        
+    def obtain_ragger(self,model_name: str = "all-mpnet-base-v2",chunk_size: int = 4096, chunk_overlap: int = 200,k: int = 2) -> Chroma:
         """
-        Retrieves stock report embeddings from Firebase for a specific ticker
-        and sets up a retriever.
+        Chunks texts using CharacterTextSplitter and creates embeddings
         
         Args:
-            ticker (str): Stock ticker symbol
-        """
-        # Initialize Firestore client
-        db = initialize_firestore("secrets_Balaji.json")
-        
-        # Get the stock report for the specific ticker
-        stock_reports = db.collection('Stock_Reports').where("stock", "==", ticker).get()
-        
-        if not stock_reports:
-            raise ValueError(f"No stock report found for ticker {ticker}")
-        
-        # Get the first report data    
-        report_data = stock_reports[0].to_dict()
-        
-        # Create a default embedding if 'embedding' field is missing
-        if 'embedding' not in report_data:
-            # Use a simple default embedding (300-dimensional vector of zeros)
-            default_embedding = [0.0] * 300
-            embeddings = np.array([default_embedding])
-            print(f"Warning: No embedding found for {ticker}. Using default embedding.")
-        else:
-            embeddings = np.array([report_data['embedding']])
-
-    # Rest of the method remains the same...
-        
-        # Create fake embedding function with our embedding
-        embedding_function = FakeEmbeddings(embeddings)
-        
-        # Get the text chunks
-        chunk_ids = report_data.get('text_chunks', [])
-        if not chunk_ids:
-            print(f"Warning: No text chunks found for {ticker}")
-            # Create a dummy document if no chunks are found
-            documents = [Document(
-                page_content=f"No text chunks available for {ticker}",
-                metadata={'stock': ticker, 'chunk_id': 'dummy'}
-            )]
-        else:
-            chunks_ref = db.collection('pdf_text_chunks')
+            texts (List[str]): List of texts to process
+            model_name (str): Name of the model to use for embeddings
             
-            # Get chunks one by one and create Document objects
-            documents = []
-            for chunk_id in chunk_ids:
-                chunk_doc = chunks_ref.document(chunk_id).get()
-                if chunk_doc.exists:
-                    chunk_data = chunk_doc.to_dict()
-                    documents.append(
-                        Document(
-                            page_content=chunk_data.get('chunk', f"No content for chunk {chunk_id}"),
-                            metadata={'stock': ticker, 'chunk_id': chunk_id}
-                        )
-                    )
+        Returns:
+            tuple: (List of document chunks, List of embeddings)
+        """
+        # Convert texts to Document objects
+        doc = Document(page_content=self.report_text) 
         
-        # Create Chroma instance with documents and embedding function
-        self.vectorstore = Chroma.from_documents(
-            documents=documents,
-            embedding=embedding_function,
-            persist_directory=f"./chroma_db_{ticker}"
+        # Create text splitter
+        text_splitter = CharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap
         )
+            # Split document
+        splits = text_splitter.split_documents([doc])
         
-        # Set up retriever with fewer results if we're using default embeddings
-        k = 1 if 'embedding' not in report_data else 2
-        self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": k})
+        # Create embedding function
+        embedding_function = SentenceTransformerEmbeddings(model_name=model_name)
         
+        # Create temporary directory for Chroma
+        persist_directory = tempfile.mkdtemp()
+        
+        try:
+            # Create and persist Chroma vector store
+            vectorstore = Chroma.from_documents(
+                documents=splits,
+                embedding=embedding_function,
+                persist_directory=persist_directory
+            )
+            
+            # Configure and return retriever
+            self.retriever = vectorstore.as_retriever(
+                search_type="similarity",
+                search_kwargs={"k": k}
+            )
+        except Exception as e:
+            # Clean up temporary directory if there's an error
+            if os.path.exists(persist_directory):
+                import shutil
+                shutil.rmtree(persist_directory)
+            raise e
         return self.retriever
-
     def analyze_annual_report(self, query: str) -> str:
         try:
             system_prompt = """You are a financial expert and market analyst. Analyze the annual financial report 
