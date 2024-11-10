@@ -219,7 +219,7 @@ def graph_allocation(my_portfolio):
     #plt.show()
 
 
-def PortfolioAnalyser(my_portfolio, rf=0.0, sigma_value=1, confidence_value=0.95, report=False, filename="report.pdf"):
+def PortfolioAnalyser(my_portfolio, rf=0.0, sigma_value=1, confidence_value=0.95, report=True, filename="report.pdf", savedata=False):
     if isinstance(my_portfolio.rebalance, pd.DataFrame):
         # we want to get the dataframe with the dates and weights
         rebalance_schedule = my_portfolio.rebalance
@@ -677,7 +677,16 @@ def PortfolioAnalyser(my_portfolio, rf=0.0, sigma_value=1, confidence_value=0.95
       # Output PDF
       pdf.output(dest="F", name=filename)
       # print("The PDF was generated successfully!")
-
+      if savedata:
+          total = sum(my_portfolio.weights)
+          user_portfolio = {}
+          for i in range(len(my_portfolio.portfolio)):
+                user_portfolio[my_portfolio.portfolio[i]] = my_portfolio.weights[i] / total
+          ret_vals = {}
+          ret_vals["User Portfolio"] = user_portfolio
+          for metric, value in metrics:
+              ret_vals[metric] = value
+          return ret_vals
 
 def flatten(subject) -> list:
     muster = []
@@ -1267,3 +1276,6 @@ def make_rebalance(
     print("Rebalance schedule: ")
     print(output_df)
     return output_df
+
+def return_values(my_portfolio):
+    return PortfolioAnalyser(my_portfolio, savedata=True)
