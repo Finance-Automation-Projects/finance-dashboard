@@ -655,7 +655,7 @@ def PortfolioAnalyser(my_portfolio, rf=0.0, sigma_value=1, confidence_value=0.95
 
       images = [
           "allocation.png",
-          "ret.png",
+          "retbench.png",
           "y_returns.png",
           "retbench.png",
           "heatmap.png",
