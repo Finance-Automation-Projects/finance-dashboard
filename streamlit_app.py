@@ -19,6 +19,47 @@ import base64
 # Import the interface for the news database
 from news_database_interface import interface
 
+##########################################################################################
+
+# from typing import Any, Dict
+# import numpy as np
+# from langchain_groq import ChatGroq
+# import warnings
+# import yfinance as yf
+# # Initialize the main LLM
+# # local_llm = "llama3.2:3b-instruct-q3_K_S"
+# # llm = ChatOllama(model=local_llm, temperature=0)
+# # Suppress all UserWarnings
+# warnings.filterwarnings('ignore', category=UserWarning)
+
+# # Or suppress specific warning messages
+# warnings.filterwarnings('ignore', message="Detected filter using positional arguments. Prefer using the 'filter' keyword argument instead.")
+# ### 2. Document Loaders and Vector Stores
+# from langchain_community.document_loaders import PyPDFLoader
+# from langchain_text_splitters import CharacterTextSplitter
+# from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+# from langchain_chroma import Chroma
+# from langchain.chains import create_retrieval_chain
+# from langchain.chains.combine_documents import create_stuff_documents_chain
+# from langchain_core.prompts import ChatPromptTemplate
+# from langchain.schema import Document
+# from langchain.embeddings.base import Embeddings
+# from langchain_core.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate
+# from langchain.schema import SystemMessage
+
+# ### 1. LLM Setup
+# import firebase_admin
+# from firebase_admin import firestore,credentials
+# import os
+# from langchain.schema import HumanMessage
+# from tavily import TavilyClient
+# import pandas as pd
+# from datetime import datetime
+
+from final_as_of_now import impoter
+##############################################################################################
+
+
 # Load news database
 obj = interface.NewsDatabase()
 database_1, database_2 = obj.to_dataframe()
@@ -474,6 +515,33 @@ def show_equity_report():
                 except Exception as e:
                     st.error(f"Error loading stock metrics: {str(e)}")
                 
+
+                ### Section for AI Generated Report
+                valid_list = ["INFY", "RELIANCE", "HINDUNILVR", "HDFCBANK", "ICICIBANK"]
+                symbol2 = symbol.replace(".NS", "")
+                if symbol2 in valid_list:
+                    
+                    # Remove .NS from symbol
+                    # Put a button to generate report
+                    if st.button("Generate AI Report"):
+
+                        input_state = {"ticker": symbol2}
+                        result = impoter.graph.invoke(input_state)
+                        st.markdown(result.get("equity_research_report", "Report generation failed."))
+                        st.markdown("## Sentiment Analysis Section")
+                        st.markdown(result.get("sentiment_analysis", "Sentiment analysis failed."))
+                        #st.markdown("## Financial Analysis Section")
+
+
+                else:
+                    st.warning("AI Generated Report is only available for selected stocks: INFY.NS, RELIANCE.NS, HINDUNILVR.NS, HDFCBANK.NS, ICICIBANK.NS")
+                    print(symbol2)
+                    return
+
+                ### Section Ends Here
+
+
+
                 # Technical Analysis Section
                 st.subheader("Technical Analysis")
                 tab1, tab2 = st.tabs(["Price Chart", "Volume Analysis"])

@@ -21,3 +21,4 @@ tavily-python
 beautifulsoup4
 firebase-admin
 langchain-groq
+langchain-chroma

@@ -1,27 +1,27 @@
 Metric,Backtest
 Start date,2023-04-01
-End date,2024-11-10
-Annual return,17.29%
-Cumulative return,28.32%
-Annual volatility,15.51%
-Winning day ratio,50.51%
-Sharpe ratio,1.11
-Calmar ratio,0.87
+End date,2024-11-11
+Annual return,16.66%
+Cumulative return,27.24%
+Annual volatility,15.34%
+Winning day ratio,52.03%
+Sharpe ratio,1.08
+Calmar ratio,0.83
 Information ratio,-0.0
-Stability,0.84
-Max Drawdown,-13.11%
-Sortino ratio,1.71
-Skew,0.3
-Kurtosis,2.09
-Tail Ratio,1.29
-Common sense ratio,1.56
+Stability,0.83
+Max Drawdown,-13.21%
+Sortino ratio,1.64
+Skew,0.11
+Kurtosis,2.06
+Tail Ratio,1.16
+Common sense ratio,1.39
 Daily value at risk,-2.0 %
-Alpha,-0.02
-Beta,0.87
-Earnings Sentiment Score,0.24687750276120787
-Revenue Sentiment Score,0.40708096132896293
-Margins Sentiment Score,0.1933825723771589
-Dividend Sentiment Score,0.39639457223069124
-EBITDA Sentiment Score,0.3384386159496298
-Debt Sentiment Score,-0.08135079835946682
-Overall Sentiment Score,0.04248310217846839
+Alpha,-0.04
+Beta,0.93
+Earnings Sentiment Score,0.19981765573151514
+Revenue Sentiment Score,0.36815224980228517
+Margins Sentiment Score,0.14658500961510287
+Dividend Sentiment Score,0.35831996671847277
+EBITDA Sentiment Score,0.27980358710536113
+Debt Sentiment Score,-0.11536718890456575
+Overall Sentiment Score,-0.016145922290083936
