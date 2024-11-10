@@ -14,7 +14,7 @@ import numpy as np
 from datetime import datetime
 from IPython.display import display, HTML
 
-from PortfolioAnalyser import PortfolioAnalyser, Engine
+from PortfolioAnalyser import PortfolioAnalyser, Engine, optimized_report
 import base64
 from PIL import Image
 # Import the interface for the news database
