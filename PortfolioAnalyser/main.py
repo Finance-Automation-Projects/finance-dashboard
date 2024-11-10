@@ -67,7 +67,8 @@ CS = [
           "#cccdff",
           "#fad6ff",
       ]
-
+    
+# Define aspects for sentiment analysis
 aspects = [
     "Earnings",
     "Revenue",
@@ -77,6 +78,16 @@ aspects = [
     "Debt",
     "Sentiment"
     ]
+
+class PDF(FPDF):
+    def header(self):
+        self.set_font("Arial", "B", 12)
+        self.cell(0, 10, "Portfolio Report", 0, 1, "C")
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Arial", "I", 8)
+        self.cell(0, 10, f"Page {self.page_no()}", 0, 0, "C")
 
 class Engine:
     def __init__(
@@ -563,7 +574,7 @@ def PortfolioAnalyser(my_portfolio, rf=0.0, sigma_value=1, confidence_value=0.95
       qs.plots.rolling_volatility(returns)
       qs.plots.rolling_sharpe(returns)
       qs.plots.rolling_beta(returns, benchmark)
-      graph_opt(my_portfolio.portfolio, wts, pie_size=7, font_size=14)
+      graph_opt(my_portfolio.portfolio, wts, pie_size=10, font_size=10)
       plot_sentiment(my_portfolio)
 
     else:
@@ -575,76 +586,97 @@ def PortfolioAnalyser(my_portfolio, rf=0.0, sigma_value=1, confidence_value=0.95
       qs.plots.rolling_volatility(returns, savefig="rvol.png", show=False),
       qs.plots.rolling_sharpe(returns, savefig="rsharpe.png", show=False),
       qs.plots.rolling_beta(returns, benchmark, savefig="rbeta.png", show=False),
-      graph_opt(my_portfolio.portfolio, wts, pie_size=10, font_size=14, save=True)
+      graph_opt(my_portfolio.portfolio, wts, pie_size=10, font_size=10, save=True)
       plot_sentiment(my_portfolio)
-      pdf = FPDF()
+
+      pdf = PDF()
       pdf.add_page()
-      pdf.set_font("arial", "B", 14)
+
+      # Header image
       pdf.image(
           "https://raw.githubusercontent.com/Armxyz1/Armxyz1/refs/heads/main/github-header-image.png",
-          x=None,
-          y=None,
+          x=10,
+          y=8,
           w=45,
           h=5,
           type="",
           link="https://github.com/Armxyz1",
       )
-      pdf.cell(20, 15, f"Report", ln=1)
-      pdf.set_font("arial", size=11)
-      pdf.image("allocation.png", x=135, y=0, w=70, h=70, type="", link="")
-      pdf.cell(20, 7, f"Start date: " + str(my_portfolio.start_date), ln=1)
-      pdf.cell(20, 7, f"End date: " + str(my_portfolio.end_date), ln=1)
-      ret.savefig("ret.png")
+      
+      # Title
+      pdf.set_font("Arial", "B", 16)
+      pdf.cell(0, 10, "Investment Portfolio Report", 0, 1, "C")
+      pdf.ln(10)
 
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.cell(20, 7, f"Annual return: " + str(CAGR), ln=1)
-      pdf.cell(20, 7, f"Cumulative return: " + str(CUM), ln=1)
-      pdf.cell(20, 7, f"Annual volatility: " + str(VOL), ln=1)
-      pdf.cell(20, 7, f"Winning day ratio: " + str(win_ratio), ln=1)
-      pdf.cell(20, 7, f"Sharpe ratio: " + str(SR), ln=1)
-      pdf.cell(20, 7, f"Calmar ratio: " + str(CR), ln=1)
-      pdf.cell(20, 7, f"Information ratio: " + str(IR), ln=1)
-      pdf.cell(20, 7, f"Stability: " + str(STABILITY), ln=1)
-      pdf.cell(20, 7, f"Max drawdown: " + str(MD), ln=1)
-      pdf.cell(20, 7, f"Sortino ratio: " + str(SOR), ln=1)
-      pdf.cell(20, 7, f"Skew: " + str(SK), ln=1)
-      pdf.cell(20, 7, f"Kurtosis: " + str(KU), ln=1)
-      pdf.cell(20, 7, f"Tail ratio: " + str(TA), ln=1)
-      pdf.cell(20, 7, f"Common sense ratio: " + str(CSR), ln=1)
-      pdf.cell(20, 7, f"Daily value at risk: " + str(VAR), ln=1)
-      pdf.cell(20, 7, f"Alpha: " + str(AL), ln=1)
-      pdf.cell(20, 7, f"Beta: " + str(BTA), ln=1)
-      pdf.cell(20, 7, f"Earnings Sentiment Score: " + str(ABSA["Earnings"]), ln=1)
-      pdf.cell(20, 7, f"Revenue Sentiment Score: " + str(ABSA["Revenue"]), ln=1)
-      pdf.cell(20, 7, f"Margins Sentiment Score: " + str(ABSA["Margins"]), ln=1)
-      pdf.cell(20, 7, f"Dividend Sentiment Score: " + str(ABSA["Dividend"]), ln=1)
-      pdf.cell(20, 7, f"EBITDA Sentiment Score: " + str(ABSA["EBITDA"]), ln=1)
-      pdf.cell(20, 7, f"Debt Sentiment Score: " + str(ABSA["Debt"]), ln=1)
-      pdf.cell(20, 7, f"Overall Sentiment Score: " + str(ABSA["Sentiment"]), ln=1)
+      # Portfolio dates
+      pdf.set_font("Arial", size=12)
+      pdf.cell(0, 10, f"Start date: {my_portfolio.start_date}", 0, 1)
+      pdf.cell(0, 10, f"End date: {my_portfolio.end_date}", 0, 1)
+      pdf.ln(10)
 
+      # Performance metrics
+      pdf.set_font("Arial", "B", 14)
+      pdf.cell(0, 10, "Performance Metrics", 0, 1)
+      pdf.set_font("Arial", size=12)
+      metrics = [
+          ("Annual return", CAGR),
+          ("Cumulative return", CUM),
+          ("Annual volatility", VOL),
+          ("Winning day ratio", win_ratio),
+          ("Sharpe ratio", SR),
+          ("Calmar ratio", CR),
+          ("Information ratio", IR),
+          ("Stability", STABILITY),
+          ("Max drawdown", MD),
+          ("Sortino ratio", SOR),
+          ("Skew", SK),
+          ("Kurtosis", KU),
+          ("Tail ratio", TA),
+          ("Common sense ratio", CSR),
+          ("Daily value at risk", VAR),
+          ("Alpha", AL),
+          ("Beta", BTA),
+          ("Earnings Sentiment Score", ABSA["Earnings"]),
+          ("Revenue Sentiment Score", ABSA["Revenue"]),
+          ("Margins Sentiment Score", ABSA["Margins"]),
+          ("Dividend Sentiment Score", ABSA["Dividend"]),
+          ("EBITDA Sentiment Score", ABSA["EBITDA"]),
+          ("Debt Sentiment Score", ABSA["Debt"]),
+          ("Overall Sentiment Score", ABSA["Sentiment"]),
+      ]
 
-      pdf.image("ret.png", x=-20, y=None, w=250, h=80, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("y_returns.png", x=None, y=None, w=200, h=100, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("retbench.png", x=None, y=None, w=200, h=100, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("heatmap.png", x=None, y=None, w=200, h=80, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("drawdown.png", x=None, y=None, w=200, h=80, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("d_periods.png", x=None, y=None, w=200, h=80, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("rvol.png", x=None, y=None, w=190, h=80, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("rsharpe.png", x=None, y=None, w=190, h=80, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("rbeta.png", x=None, y=None, w=190, h=80, type="", link="")
-      pdf.cell(20, 7, f"", ln=1)
-      pdf.image("sentiment.png", x=None, y=None, w=200, h=80, type="", link="")
+      for metric, value in metrics:
+          pdf.cell(0, 10, f"{metric}: {value}", 0, 1)
 
+      # Images
+      pdf.set_font("Arial", "B", 14)
+      pdf.cell(0, 10, "Visualizations", 0, 1)
+      pdf.ln(5)
+
+      images = [
+          "allocation.png",
+          "ret.png",
+          "y_returns.png",
+          "retbench.png",
+          "heatmap.png",
+          "drawdown.png",
+          "d_periods.png",
+          "rvol.png",
+          "rsharpe.png",
+          "rbeta.png",
+          "sentiment.png",
+      ]
+
+      for image in images:
+          if image == "allocation.png":
+              pdf.image(image, x = (pdf.w - 95) / 2, y=None, w=95, h=80, type="", link="")
+          else:
+            pdf.image(image, x=None, y=None, w=190, h=80, type="", link="")
+          pdf.ln(5)
+
+      # Output PDF
       pdf.output(dest="F", name=filename)
-    #   print("The PDF was generated successfully!")
+      # print("The PDF was generated successfully!")
 
 
 def flatten(subject) -> list:
@@ -663,6 +695,7 @@ def graph_opt(my_portfolio, my_weights, pie_size, font_size, save=False):
     ax1.pie(my_weights, labels=my_portfolio, autopct="%1.1f%%", shadow=False, colors=CS)
     ax1.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.rcParams["font.size"] = font_size
+    plt.title("Portfolio's allocation")
     if save:
       plt.savefig("allocation.png")
     # plt.show()
@@ -748,7 +781,7 @@ def hrp(my_portfolio, perf=True) -> list:
     return flatten(result)
 
 
-def mean_var(my_portfolio, vol_max=0.15, perf=True) -> list:
+def mean_var(my_portfolio, vol_max=0.25, perf=True) -> list:
     # changed to take in desired timeline, the problem is that it would use all historical data
 
     ohlc = yf.download(
@@ -832,6 +865,13 @@ def min_var(my_portfolio, perf=True) -> list:
 
     return flatten(result)
 
+# Define portfolio optimizers
+optimizers = {
+    "EF": efficient_frontier,
+    # "MEANVAR": mean_var,
+    "HRP": hrp,
+    "MINVAR": min_var,
+}
 
 def optimize_portfolio(my_portfolio, vol_max=25, pie_size=5, font_size=14):
     if my_portfolio.optimizer == None:
@@ -848,13 +888,6 @@ def optimize_portfolio(my_portfolio, vol_max=25, pie_size=5, font_size=14):
 
     wts = [1.0 / len(my_portfolio.portfolio)] * len(my_portfolio.portfolio)
 
-    optimizers = {
-        "EF": efficient_frontier,
-        "MEANVAR": mean_var,
-        "HRP": hrp,
-        "MINVAR": min_var,
-    }
-    
     if my_portfolio.optimizer in optimizers.keys():
         if my_portfolio.optimizer == "MEANVAR":
             wts = optimizers.get(my_portfolio.optimizer)(my_portfolio, my_portfolio.max_vol)
@@ -874,7 +907,7 @@ def optimize_portfolio(my_portfolio, vol_max=25, pie_size=5, font_size=14):
     for i in sorted(indices, reverse=True):
         del port[i]
 
-    graph_opt(port, wts, pie_size, font_size)
+    graph_opt(port, wts, pie_size, font_size, save=True)
 
     print("\n")
 
@@ -883,18 +916,108 @@ def optimize_portfolio(my_portfolio, vol_max=25, pie_size=5, font_size=14):
     )
     creturns2 = (returns2 + 1).cumprod()
 
+    return port, wts, creturns1, creturns2
+
+def optimizer_super_cagr(my_portfolio):
+    best_optimizer = None
+    max_cagr = float("-inf")
+
+    for optimizer in optimizers.keys():
+        temp_portfolio = copy.deepcopy(my_portfolio)
+        temp_portfolio.optimizer = optimizer
+
+        try:
+            port, wts, creturns1, creturns2 = optimize_portfolio(temp_portfolio)
+            ret = cagr(creturns2, period='daily', annualization=None)
+
+            if ret > max_cagr:
+                max_cagr = ret
+                best_optimizer = optimizer
+
+        except Exception as e:
+            raise RuntimeError(f"Error in {optimizer} optimizer: {e}")
+        
+    return best_optimizer
+
+def optimizer_super_sharpe(my_portfolio):
+    best_optimizer = None
+    max_sharpe = float("-inf")
+
+    for optimizer in optimizers.keys():
+        temp_portfolio = copy.deepcopy(my_portfolio)
+        temp_portfolio.optimizer = optimizer
+
+        try:
+            port, wts, creturns1, creturns2 = optimize_portfolio(temp_portfolio)
+            ret = qs.stats.sharpe(creturns2, rf=0.0)
+
+            if ret > max_sharpe:
+                max_sharpe = ret
+                best_optimizer = optimizer
+
+        except Exception as e:
+            raise RuntimeError(f"Error in {optimizer} optimizer: {e}")
+        
+    return best_optimizer
+
+def plot_optimized_portfolio(my_portfolio):
+    best_optimizer_cagr = optimizer_super_cagr(my_portfolio)
+
+    best_engine = copy.deepcopy(my_portfolio)
+    best_engine.optimizer = best_optimizer_cagr
+
+    best_portfolio, best_weights, creturns, creturns_cagr = optimize_portfolio(best_engine)
+
+    best_optimizer_sharpe = optimizer_super_sharpe(my_portfolio)
+
+    best_engine = copy.deepcopy(my_portfolio)
+    best_engine.optimizer = best_optimizer_sharpe
+
+    best_portfolio, best_weights, creturns, creturns_sharpe = optimize_portfolio(best_engine)
+    
     plt.rcParams["font.size"] = 13
     plt.figure(figsize=(30, 10))
     plt.xlabel("Portfolio vs Benchmark")
 
-    ax1 = creturns1.plot(color="blue", label="Without optimization")
-    ax2 = creturns2.plot(color="red", label="With optimization")
+    ax1 = creturns.plot(color="blue", label="Without optimization")
+    ax2 = creturns_cagr.plot(color="red", label="With CAGR optimization")
+    ax3 = creturns_sharpe.plot(color="green", label="With Sharpe ratio optimization")
 
     h1, l1 = ax1.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
+    h3, l3 = ax3.get_legend_handles_labels()
 
-    plt.legend(l1 + l2, loc=2)
-    plt.show()
+    plt.legend(l1 + l2 + l3, loc="upper left")
+    plt.savefig("optimized_returns.png")
+    return best_optimizer_cagr, best_optimizer_sharpe
+    # plt.show()
+
+def optimized_report(my_portfolio, optimize=None):
+
+    if optimize == "CAGR":
+        best_optimizer_cagr, _ = plot_optimized_portfolio(my_portfolio)
+        my_portfolio.optimizer = best_optimizer_cagr
+        my_portfolio.max_vol = 25
+        cagr_port, cagr_wts, cagr_creturns1, cagr_creturns2 = optimize_portfolio(my_portfolio, vol_max=25)
+
+        my_portfolio.optimizer = None
+        temp = copy.deepcopy(my_portfolio)
+        temp.portfolio = cagr_port
+        temp.weights = cagr_wts
+
+    elif optimize == "Sharpe":
+        _, best_optimizer_sharpe = plot_optimized_portfolio(my_portfolio)
+        my_portfolio.optimizer = best_optimizer_sharpe
+        my_portfolio.max_vol = 25
+        sharpe_port, sharpe_wts, sharpe_creturns1, sharpe_creturns2 = optimize_portfolio(my_portfolio, vol_max=25)
+
+        my_portfolio.optimizer = None
+        temp = copy.deepcopy(my_portfolio)
+        temp.portfolio = sharpe_port
+        temp.weights = sharpe_wts
+    
+    PortfolioAnalyser(temp, report=True, filename="optim_report.pdf")
+    return temp.portfolio, temp.weights
 
 
 def check_schedule(rebalance) -> bool:
@@ -1028,7 +1151,7 @@ def plot_sentiment(my_portfolio) -> None:
     # Plot a bar graph comparing sentiment and NIFTY sentiment
     plt.figure(figsize=(10, 5))
     plt.bar(["Portfolio", "NIFTY 50"], [sentiment, nifty_sentiment], color=["#4D8BBB", "#F9DE86"])
-    plt.title("Sentiment Analysis")
+    plt.title("Sentiment Analysis", fontdict={"fontweight": "bold", "fontsize": 15})
     plt.ylabel("Sentiment Score")
     plt.savefig("sentiment.png")
     pass
