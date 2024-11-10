@@ -16,6 +16,7 @@ from IPython.display import display, HTML
 
 from PortfolioAnalyser import PortfolioAnalyser, Engine
 import base64
+from PIL import Image
 # Import the interface for the news database
 from news_database_interface import interface
 
@@ -733,7 +734,7 @@ def show_portfolio_analysis():
             weights = list(portfolio.values())
             
             portfolio = Engine(
-                start_date="2023-04-01",
+                start_date="2024-04-01",
                 portfolio=stocks,
                 weights=weights
             )
@@ -750,6 +751,157 @@ def show_portfolio_analysis():
             
             # Displaying File
             st.markdown(pdf_display, unsafe_allow_html=True)
+        else:
+            st.warning("Please enter at least one stock in your portfolio.")
+
+    if st.button("Optimize Portfolio over CAGR"):
+        if portfolio_data:
+            st.subheader("Original Portfolio")
+            portfolio = {}
+            total_value = 0
+            for item in portfolio_data:
+                info = get_stock_info(item['symbol'])
+                if info:
+                    current_value = info['current_price'] * item['quantity']
+                    portfolio[str(item['symbol'])] = float(current_value)
+                    investment_value = item['buy_price'] * item['quantity']
+                    profit_loss = current_value - investment_value
+                    total_value += current_value
+                    
+                    st.markdown(f"""
+                    <div style='background-color:#f0f2f6;padding:10px;border-radius:5px;margin-bottom:10px;'>
+                        <h4>{item['symbol']}</h4>
+                        <p>Quantity: {item['quantity']}</p>
+                        <p>Current Value: ₹{current_value:,.2f}</p>
+                        <p>Profit/Loss: ₹{profit_loss:,.2f}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            st.markdown(f"### Total Portfolio Value: ₹{total_value:,.2f}")
+        
+            stocks = list(portfolio.keys())
+            weights = list(portfolio.values())
+            
+            portfolio = Engine(
+                start_date="2024-04-01",
+                portfolio=stocks,
+                weights=weights
+            )
+
+            stocks, weights = optimized_report(portfolio, optimize="CAGR")
+
+            st.subheader("Optimized Portfolio")
+            portfolio = {}
+            total2 = 0
+            for i, stock in enumerate(stocks):
+                info = get_stock_info(stock)
+                if info:
+                    current_value = info['current_price']
+                    portfolio[str(stock)] = float(current_value)
+                    quantity = int(weights[i] * total_value / current_value) + 1
+                    total2 += current_value * quantity
+                    
+                    st.markdown(f"""
+                    <div style='background-color:#f0f2f6;padding:10px;border-radius:5px;margin-bottom:10px;'>
+                        <h4>{stock}</h4>
+                        <p>Quantity: {quantity}</p>
+                        <p>Current Value: ₹{current_value * quantity:,.2f}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            st.markdown(f"### Total Optimized Portfolio Value: ₹{total2:,.2f}")
+
+            # View report PDF
+            st.subheader("Optimized Portfolio Report")
+            # Opening file from file path
+            with open("optim_report.pdf", "rb") as f:
+                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+
+            # Embedding PDF in HTML
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="800" height="800" type="application/pdf"></iframe>'
+            
+            # Displaying File
+            st.markdown(pdf_display, unsafe_allow_html=True)
+
+
+            st.subheader("Comparison of Portfolio Returns")
+            image = Image.open('optimized_returns.png')
+            st.image(image, caption='Optimized Portfolio Returns', use_container_width=True)
+        else:
+            st.warning("Please enter at least one stock in your portfolio.")
+        
+    if st.button("Optimize Portfolio over Sharpe Ratio"):
+        if portfolio_data:
+            st.subheader("Original Portfolio")
+            portfolio = {}
+            total_value = 0
+            for item in portfolio_data:
+                info = get_stock_info(item['symbol'])
+                if info:
+                    current_value = info['current_price'] * item['quantity']
+                    portfolio[str(item['symbol'])] = float(current_value)
+                    investment_value = item['buy_price'] * item['quantity']
+                    profit_loss = current_value - investment_value
+                    total_value += current_value
+                    
+                    st.markdown(f"""
+                    <div style='background-color:#f0f2f6;padding:10px;border-radius:5px;margin-bottom:10px;'>
+                        <h4>{item['symbol']}</h4>
+                        <p>Quantity: {item['quantity']}</p>
+                        <p>Current Value: ₹{current_value:,.2f}</p>
+                        <p>Profit/Loss: ₹{profit_loss:,.2f}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            st.markdown(f"### Total Portfolio Value: ₹{total_value:,.2f}")
+        
+            stocks = list(portfolio.keys())
+            weights = list(portfolio.values())
+            
+            portfolio = Engine(
+                start_date="2024-04-01",
+                portfolio=stocks,
+                weights=weights
+            )
+
+            stocks, weights = optimized_report(portfolio, optimize="Sharpe")
+
+            st.subheader("Optimized Portfolio")
+            portfolio = {}
+            total2 = 0
+            for i, stock in enumerate(stocks):
+                info = get_stock_info(stock)
+                if info:
+                    current_value = info['current_price']
+                    portfolio[str(stock)] = float(current_value)
+                    quantity = int(weights[i] * total_value / current_value) + 1
+                    total2 += current_value * quantity
+                    
+                    st.markdown(f"""
+                    <div style='background-color:#f0f2f6;padding:10px;border-radius:5px;margin-bottom:10px;'>
+                        <h4>{stock}</h4>
+                        <p>Quantity: {quantity}</p>
+                        <p>Current Value: ₹{current_value * quantity:,.2f}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            st.markdown(f"### Total Optimized Portfolio Value: ₹{total2:,.2f}")
+
+            # View report PDF
+            st.subheader("Optimized Portfolio Report")
+            # Opening file from file path
+            with open("optim_report.pdf", "rb") as f:
+                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+
+            # Embedding PDF in HTML
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="800" height="800" type="application/pdf"></iframe>'
+            
+            # Displaying File
+            st.markdown(pdf_display, unsafe_allow_html=True)
+
+            st.subheader("Comparison of Portfolio Returns")
+            image = Image.open('optimized_returns.png')
+            st.image(image, caption='Optimized Portfolio Returns', use_container_width=True)
         else:
             st.warning("Please enter at least one stock in your portfolio.")
 
