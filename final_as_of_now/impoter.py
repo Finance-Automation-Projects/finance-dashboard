@@ -122,7 +122,7 @@ class NewsAnalyzer:
         self.tavily_client = TavilyClient(api_key=tavily_api_key or os.getenv("TAVILY_API_KEY"))
         self.news_db = interface.NewsDatabase()
 
-    def get_headlines(self, ticker: str, limit: int = 50) -> pd.DataFrame:
+    def get_headlines(self, ticker: str, limit: int = 20) -> pd.DataFrame:
         """Get and sort headlines for a specific ticker from the database."""
         try:
             # Append '.NS' to the ticker
