@@ -9,6 +9,10 @@ import json
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
+from PortfolioAnalyser import PortfolioAnalyser, Engine
+import io
+import sys
+import base64
 
 # Page configuration
 st.set_page_config(page_title="Equity Research Agent", layout="wide")
@@ -309,11 +313,13 @@ def show_portfolio_analysis():
     if st.button("Analyze Portfolio"):
         if portfolio_data:
             st.subheader("Portfolio Analysis")
+            portfolio = {}
             total_value = 0
             for item in portfolio_data:
                 info = get_stock_info(item['symbol'])
                 if info:
                     current_value = info['current_price'] * item['quantity']
+                    portfolio[str(item['symbol'])] = float(current_value)
                     investment_value = item['buy_price'] * item['quantity']
                     profit_loss = current_value - investment_value
                     total_value += current_value
@@ -328,6 +334,37 @@ def show_portfolio_analysis():
                     """, unsafe_allow_html=True)
             
             st.markdown(f"### Total Portfolio Value: ₹{total_value:,.2f}")
+        
+            # Portfolio analysis
+            st.markdown("### Portfolio Analysis")
+            stocks = list(portfolio.keys())
+            weights = list(portfolio.values())
+            
+            st.markdown("Start date: 2023-04-01")
+            portfolio = Engine(
+                start_date="2024-04-01",
+                portfolio=stocks,
+                weights=weights
+            )
+
+            buffer = io.StringIO()
+            sys.stdout = buffer
+            PortfolioAnalyser(portfolio, report=True)
+            sys.stdout = sys.__stdout__
+
+            analyser_output = buffer.getvalue()
+            st.markdown(f"```{analyser_output}```")
+
+            # View report PDF
+            # Opening file from file path
+            with open("report.pdf", "rb") as f:
+                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+
+            # Embedding PDF in HTML
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="800" height="800" type="application/pdf"></iframe>'
+            
+            # Displaying File
+            st.markdown(pdf_display, unsafe_allow_html=True)
         else:
             st.warning("Please enter at least one stock in your portfolio.")
 
