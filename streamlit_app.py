@@ -905,6 +905,71 @@ def show_portfolio_analysis():
         else:
             st.warning("Please enter at least one stock in your portfolio.")
 
+import test as tt
+######################CHATBOT SECTION################################################
+import streamlit as st
+import asyncio
+from test import FinancialAssistant, ChatGroq, GROQ_API_KEY
+import os
+import test as tt
+
+def initialize_assistant():
+    """Initialize the FinancialAssistant if it doesn't exist in session state"""
+    if 'assistant' not in st.session_state:
+        llm = ChatGroq(
+            temperature=0.1,
+            model_name="llama-3.2-90b-text-preview",
+            groq_api_key=GROQ_API_KEY,
+            max_tokens=3000
+        )
+        st.session_state.assistant = FinancialAssistant(llm)
+
+def initialize_chat_history():
+    """Initialize chat history if it doesn't exist in session state"""
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
+
+def display_chat_history():
+    """Display all messages in the chat history"""
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+async def process_user_input(user_input: str):
+    """Process the user input and get AI response"""
+    response = await st.session_state.assistant.process_query(user_input)
+    return response
+
+def ai_chatbot():
+    st.title("Financial Assistant Chatbot")
+    
+    # Initialize the assistant and chat history
+    initialize_assistant()
+    initialize_chat_history()
+    
+    # Display chat history
+    display_chat_history()
+    
+    # Chat input
+    if user_input := st.chat_input("What would you like to know about?"):
+        # Display user message
+        st.chat_message("user").markdown(user_input)
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        
+        # Get AI response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                # Create event loop and run async function
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                response = loop.run_until_complete(process_user_input(user_input))
+                loop.close()
+                
+                # Display AI response
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+    
+#######################################################################
 # Sidebar Navigation
 with st.sidebar:
     st.markdown('<p class="big-font">Navigation</p>', unsafe_allow_html=True)
@@ -917,6 +982,8 @@ with st.sidebar:
         st.session_state.page = "Equity Report"
     if st.button("Portfolio Analysis", key="portfolio_btn"):
         st.session_state.page = "Portfolio Analysis"
+    if st.button("AI Chatbot", key="ai_chatbot_btn"):
+        st.session_state.page = "AI Chatbot"
 
 # Main content based on selected page
 if st.session_state.page == "Dashboard":
@@ -927,3 +994,5 @@ elif st.session_state.page == "Equity Report":
     show_equity_report()
 elif st.session_state.page == "Portfolio Analysis":
     show_portfolio_analysis()
+elif st.session_state.page == "AI Chatbot":
+    ai_chatbot()

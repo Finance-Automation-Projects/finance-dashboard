@@ -22,3 +22,7 @@ beautifulsoup4
 firebase-admin
 langchain-groq
 langchain-chroma
+fitz
+frontend
+pymupdf
+
