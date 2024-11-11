@@ -24,4 +24,4 @@ langchain-groq
 langchain-chroma
 fitz
 frontend
-pymudf
+pymupdf
