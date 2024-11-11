@@ -891,7 +891,7 @@ def optimize_portfolio(my_portfolio, vol_max=25, pie_size=5, font_size=14):
         start_date=my_portfolio.start_date,
         end_date=my_portfolio.end_date,
     )
-    creturns1 = (returns1 + 1).cumprod()
+    creturns1 = cum_returns(returns1, starting_value=0, out=None) * 100
 
     port = copy.deepcopy(my_portfolio.portfolio)
 
@@ -923,8 +923,7 @@ def optimize_portfolio(my_portfolio, vol_max=25, pie_size=5, font_size=14):
     returns2 = get_returns(
         port, wts, start_date=my_portfolio.start_date, end_date=my_portfolio.end_date
     )
-    creturns2 = (returns2 + 1).cumprod()
-
+    creturns2 = cum_returns(returns2, starting_value=0, out=None) * 100
     return port, wts, creturns1, creturns2
 
 def optimizer_super_cagr(my_portfolio):
@@ -987,6 +986,7 @@ def plot_optimized_portfolio(my_portfolio):
     plt.rcParams["font.size"] = 13
     plt.figure(figsize=(30, 10))
     plt.xlabel("Portfolio vs Benchmark")
+    plt.ylabel("Cumulative Returns in %")
 
     ax1 = creturns.plot(color="blue", label="Without optimization")
     ax2 = creturns_cagr.plot(color="red", label="With CAGR optimization")
