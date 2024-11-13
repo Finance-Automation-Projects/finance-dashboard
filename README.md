@@ -1,39 +1,58 @@
-# 💬 Chatbot template
+# Automated Market Research Analyst
 
-A simple Streamlit app for our dashboard.
+This project aims to streamline and automate the role of a market research analyst. By leveraging machine learning models, sentiment analysis, data scraping, and a chatbot interface, this system provides real-time market analysis and insights, enhancing efficiency and decision-making capabilities for financial analysts.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://finance301.streamlit.app/)
+## Project Objectives
+- **Efficient Data Collection**: Automate and reduce time spent on collecting and analyzing market data.
+- **Real-Time Insights**: Provide real-time updates and forecast trends.
+- **Sentiment Analysis Integration**: Integrate news sentiment analysis into generated reports.
+- **User-Friendly Interface**: Interact with the system through a chatbot interface.
 
-### How to run it on your own machine
+## Key Components
+1. **News Database with Sentiment Analysis**:
+   - Aspect-based sentiment analysis using **DeBERTa-v3** and **FinBERT**.
+   - Daily news updates with sentiment annotations using GitHub Actions.
+   - Data stored in SQLite for lightweight, efficient access.
 
-1. Install the requirements
+2. **Portfolio Analyzer and Optimizer**:
+   - Backtesting and performance metrics generation.
+   - Risk assessment and optimization using **PyPortfolioOpt**.
+   - PDF report generation for historical comparison.
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+3. **Equity Research Report Generator**:
+   - Multi-agent LLM-based system to generate comprehensive reports.
+   - Each report covers company overview, sector comparison, sentiment insights, etc.
 
-2. Run the app
+4. **Chatbot Interface**:
+   - Built using Langchain to classify user intents.
+   - Routes queries to appropriate agents for financial overviews, peer comparison, sentiment analysis, and portfolio insights.
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+## Technology Stack
+- **Data Scraping**: BeautifulSoup, Selenium
+- **Sentiment Analysis Models**: DeBERTa-v3, FinBERT
+- **Databases**: Firebase for financials, SQLite for news data
+- **Portfolio Optimization**: PyPortfolioOpt, empyrical, quantstats
+- **Chatbot Framework**: Langchain
+- **CI/CD**: GitHub Actions for automated updates
 
-# Task Delegation: 
-- [ ] Sirjan and Pratyush: Sentiment Analysis
-- [ ] Ishaq : Stocks
-- [ ] Balaji : ??
-- [ ] Suhas : ??
-- [ ] Rohit : ??
+## Usage
+1. **News and Sentiment Analysis**:
+   - Automatically fetches and processes daily financial news.
+2. **Portfolio Analysis**:
+   - Users enter their portfolio through a UI, which then backtests and provides metrics.
+3. **Chatbot Interface**:
+   - Chat with the system for insights on specific companies, peer comparisons, sentiment analysis, and portfolio performance.
 
-## Overall Structure:
-![Screenshot_20241009_174510](https://github.com/user-attachments/assets/dcf3398d-02da-4063-988f-168227d09adb)
+## Challenges and Improvements
+- **Data Quality**: Limited by accessible financial data; future work could involve direct data purchases for accuracy.
+- **Database Constraints**: Currently using a split database approach; future plans include consolidating into a more robust database.
+- **Future Scope**: Extend functionality to cover commodities, improve forecast explainability, incorporate macroeconomic factors, and enhance agent interaction.
 
-These are the various subsections to be covered:
-### Stocks
-- [ ] Stock wise various scores like internal conflicts, popularity amongst retail investors
 
-### Sentiment Analysis
-- [ ] Sentiment Score for various sectors
-- [ ] Social Media Sentiment
-- [ ] Section for most important news
-      
+## Learning Outcomes
+- **Data Pipeline Management**: Building automated data collection and processing workflows.
+- **Advanced Sentiment Analysis**: Implementing fine-tuned BERT models for aspect-based sentiment analysis.
+- **CI/CD**: Automating updates through GitHub Actions for daily news data.
+
+## License
+This project is licensed under the MIT License.
