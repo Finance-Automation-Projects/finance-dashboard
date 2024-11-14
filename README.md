@@ -15,7 +15,7 @@ This project aims to streamline and automate the role of a market research analy
    - Data stored in SQLite for lightweight, efficient access.
 
 2. **Portfolio Analyzer and Optimizer**:
-   - Backtesting and performance metrics generation.
+   - Backtesting and performance metrics generation using **empyrical** and **quantstats**.
    - Risk assessment and optimization using **PyPortfolioOpt**.
    - PDF report generation for historical comparison.
 
@@ -46,13 +46,14 @@ This project aims to streamline and automate the role of a market research analy
 ## Challenges and Improvements
 - **Data Quality**: Limited by accessible financial data; future work could involve direct data purchases for accuracy.
 - **Database Constraints**: Currently using a split database approach; future plans include consolidating into a more robust database.
-- **Future Scope**: Extend functionality to cover commodities, improve forecast explainability, incorporate macroeconomic factors, and enhance agent interaction.
+- **Future Scope**: Extend functionality to cover commodities, improve forecast explainability, integrate portfolio uploading, incorporate macroeconomic factors, and enhance agent interaction.
 
 
 ## Learning Outcomes
 - **Data Pipeline Management**: Building automated data collection and processing workflows.
 - **Advanced Sentiment Analysis**: Implementing fine-tuned BERT models for aspect-based sentiment analysis.
 - **CI/CD**: Automating updates through GitHub Actions for daily news data.
+- **UI Design**: Building a UI framework using streamlit and integrating backend components with frontend interface.
 
 ## License
 This project is licensed under the MIT License.
