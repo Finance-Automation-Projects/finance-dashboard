@@ -141,7 +141,7 @@ import tempfile
 ### 3. Agent Prompts
 
 GROQ_API_KEY = "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"  # Replace with your actual API key
-TAVLY_API_KEY = "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"
+TAVLY_API_KEY = "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"
 
 # Initialize Groq LLM
 llm = ChatGroq(

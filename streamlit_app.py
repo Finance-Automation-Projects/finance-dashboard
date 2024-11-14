@@ -138,6 +138,13 @@ if 'chat_model' not in st.session_state:
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 
+async def async_wrapper(func, *args, **kwargs):
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        return await asyncio.ensure_future(func(*args, **kwargs))
+    else:
+        return await loop.run_in_executor(None, func, *args, **kwargs)
+        
 def get_moneycontrol_news():
     try:
         url = "https://www.moneycontrol.com/news/business/markets/"
@@ -173,7 +180,7 @@ def get_youtube_videos():
     try:
         youtube = googleapiclient.discovery.build(
             'youtube', 'v3',
-            developerKey=st.secrets["YOUTUBE_API_KEY"]
+            developerKey="AIzaSyDiMF5BGMfLZ42xbwGjh4kdYT7GMWE32qw"
         )
 
         search_response = youtube.search().list(
@@ -279,19 +286,24 @@ def show_dashboard():
     with col1:
         st.subheader("NIFTY Chart")
         try:
-            nifty_data = yf.download("ITC.NS", start=datetime.now() - timedelta(days=365), end=datetime.now())
-            fig = go.Figure(data=[go.Candlestick(x=nifty_data.index,
-                                                 open=nifty_data['Open'],
-                                                 high=nifty_data['High'],
-                                                 low=nifty_data['Low'],
-                                                 close=nifty_data['Close'])])
-            fig.update_layout(height=400)
-            st.plotly_chart(fig, use_container_width=True)
-            print("Error --- ")
-
+            nifty_data = yf.download("^NSEI", start=datetime.now() - timedelta(days=365), end=datetime.now())
+            
+            if nifty_data.empty:
+                print("No data retrieved for the selected ticker. Please try again later.")
+            else:
+                print("Data retrieved successfully!")
+                fig = go.Figure(data=[go.Candlestick(x=nifty_data.index,
+                                                    open=nifty_data['Open'],
+                                                    high=nifty_data['High'],
+                                                    low=nifty_data['Low'],
+                                                    close=nifty_data['Close'])])
+                print("hello")
+                fig.update_layout(height=400)
+                print("hello1")
+                st.plotly_chart(fig, use_container_width=True)
+                print("hello2")
         except Exception as e:
-            print("Error --- ")
-            st.error(f"Error loading NIFTY chart: {str(e)}")
+            st.error(f"An error occurred: {e}")
         
         # YouTube Videos Section
         st.subheader("Latest Market Analysis Videos")
@@ -320,26 +332,26 @@ def show_dashboard():
             </div>
             """, unsafe_allow_html=True)
 
-def show_stocks():
-    st.title("Stocks Analysis")
+# def show_stocks():
+#     st.title("Stocks Analysis")
     
-    search_term = st.text_input("Search for a stock", "").upper()
+#     search_term = st.text_input("Search for a stock", "").upper()
     
-    st.subheader("NIFTY 50 Stocks")
+#     st.subheader("NIFTY 50 Stocks")
     
-    cols = st.columns(5)
-    for i, symbol in enumerate(NIFTY50_SYMBOLS):
-        info = get_stock_info(symbol)
-        if info:
-            with cols[i % 5]:
-                color = "green" if info['change_percent'] >= 0 else "red"
-                st.markdown(f"""
-                <div style='background-color:#f0f2f6;padding:10px;border-radius:5px;margin-bottom:10px;'>
-                    <h4>{info['symbol'].replace('.NS', '')}</h4>
-                    <p>₹{info['current_price']}</p>
-                    <p style='color:{color};'>{info['change_percent']}%</p>
-                </div>
-                """, unsafe_allow_html=True)
+#     cols = st.columns(5)
+#     for i, symbol in enumerate(NIFTY50_SYMBOLS):
+#         info = get_stock_info(symbol)
+#         if info:
+#             with cols[i % 5]:
+#                 color = "green" if info['change_percent'] >= 0 else "red"
+#                 st.markdown(f"""
+#                 <div style='background-color:#f0f2f6;padding:10px;border-radius:5px;margin-bottom:10px;'>
+#                     <h4>{info['symbol'].replace('.NS', '')}</h4>
+#                     <p>₹{info['current_price']}</p>
+#                     <p style='color:{color};'>{info['change_percent']}%</p>
+#                 </div>
+#                 """, unsafe_allow_html=True)
 
 def show_equity_report():
     st.title("Equity Research Report")
@@ -464,7 +476,7 @@ def show_equity_report():
                             showlegend=False,
                         )
 
-                        st.plotly_chart(fig_sentiment, use_container_width=True)
+                        st.plotly_chart(fig_sentiment, use_column_width=True)
 
 
 
@@ -485,7 +497,7 @@ def show_equity_report():
                             xaxis_title="Metrics",
                             height=400
                         )
-                        st.plotly_chart(fig_growth, use_container_width=True)
+                        st.plotly_chart(fig_growth, use_column_width=True)
                         
                         # Performance Indicators Bar Chart
                         st.subheader("Performance Indicators")
@@ -511,7 +523,7 @@ def show_equity_report():
                             xaxis_title="Indicators",
                             height=400
                         )
-                        st.plotly_chart(fig_performance, use_container_width=True)
+                        st.plotly_chart(fig_performance, use_column_width=True)
                         
                 except Exception as e:
                     st.error(f"Error loading stock metrics: {str(e)}")
@@ -645,42 +657,42 @@ def show_equity_report():
             except Exception as e:
                 st.error(f"Error generating report: {str(e)}")
     
-    with col2:
-        st.subheader("AI Research Assistant")
+    # with col2:
+    #     st.subheader("AI Research Assistant")
         
-        model_options = {
-            "OpenAI": "GPT-4 - Fast, reliable, good for financial analysis",
-            "Anthropic": "Claude - Excellent for detailed research and analysis",
-            "Groq": "LLaMA 2 - Fast inference, good for quick insights"
-        }
+    #     model_options = {
+    #         "OpenAI": "GPT-4 - Fast, reliable, good for financial analysis",
+    #         "Anthropic": "Claude - Excellent for detailed research and analysis",
+    #         "Groq": "LLaMA 2 - Fast inference, good for quick insights"
+    #     }
         
-        selected_model = st.selectbox(
-            "Choose AI Model",
-            list(model_options.keys()),
-            format_func=lambda x: f"{x}: {model_options[x]}"
-        )
+    #     selected_model = st.selectbox(
+    #         "Choose AI Model",
+    #         list(model_options.keys()),
+    #         format_func=lambda x: f"{x}: {model_options[x]}"
+    #     )
         
-        if st.button("Initialize Chat"):
-            st.session_state.chat_model = init_chat_model(selected_model)
-            st.success(f"Initialized {selected_model} model!")
+    #     if st.button("Initialize Chat"):
+    #         st.session_state.chat_model = init_chat_model(selected_model)
+    #         st.success(f"Initialized {selected_model} model!")
         
-        if st.session_state.chat_model:
-            if symbol:
-                st.info(f"Ask anything about {symbol} and its performance!")
+    #     if st.session_state.chat_model:
+    #         if symbol:
+    #             st.info(f"Ask anything about {symbol} and its performance!")
             
-            user_input = st.text_input("Ask about the selected stock:")
-            if user_input and st.button("Send"):
-                with st.spinner("Generating response..."):
-                    enhanced_prompt = f"Analysis for {symbol}: {user_input}"
-                    response = st.session_state.chat_model.invoke(enhanced_prompt)
-                    st.session_state.chat_history.append(("You", user_input))
-                    st.session_state.chat_history.append(("Assistant", response))
+    #         user_input = st.text_input("Ask about the selected stock:")
+    #         if user_input and st.button("Send"):
+    #             with st.spinner("Generating response..."):
+    #                 enhanced_prompt = f"Analysis for {symbol}: {user_input}"
+    #                 response = st.session_state.chat_model.invoke(enhanced_prompt)
+    #                 st.session_state.chat_history.append(("You", user_input))
+    #                 st.session_state.chat_history.append(("Assistant", response))
             
-            for role, message in st.session_state.chat_history:
-                if role == "You":
-                    st.markdown(f"🗣️ **You:** {message}")
-                else:
-                    st.markdown(f"🤖 **Assistant:** {message}")
+    #         for role, message in st.session_state.chat_history:
+    #             if role == "You":
+    #                 st.markdown(f"🗣️ **You:** {message}")
+    #             else:
+    #                 st.markdown(f"🤖 **Assistant:** {message}")
                     
 def show_portfolio_analysis():
     st.title("Portfolio Analysis")
@@ -826,7 +838,7 @@ def show_portfolio_analysis():
 
             st.subheader("Comparison of Portfolio Returns")
             image = Image.open('optimized_returns.png')
-            st.image(image, caption='Optimized Portfolio Returns', use_container_width=True)
+            st.image(image, caption='Optimized Portfolio Returns', use_column_width=True)
         else:
             st.warning("Please enter at least one stock in your portfolio.")
         
@@ -901,7 +913,7 @@ def show_portfolio_analysis():
 
             st.subheader("Comparison of Portfolio Returns")
             image = Image.open('optimized_returns.png')
-            st.image(image, caption='Optimized Portfolio Returns', use_container_width=True)
+            st.image(image, caption='Optimized Portfolio Returns', use_column_width=True)
         else:
             st.warning("Please enter at least one stock in your portfolio.")
 
@@ -922,7 +934,7 @@ def initialize_assistant():
             groq_api_key=GROQ_API_KEY,
             max_tokens=3000
         )
-        st.session_state.assistant = FinancialAssistant(llm)
+        st.session_state.assistant = FinancialAssistant(llm=llm)
 
 def initialize_chat_history():
     """Initialize chat history if it doesn't exist in session state"""
@@ -960,14 +972,26 @@ def ai_chatbot():
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 # Create event loop and run async function
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                response = loop.run_until_complete(process_user_input(user_input))
-                loop.close()
+                # loop = asyncio.new_event_loop()
+                # asyncio.set_event_loop(loop)
+                # response = loop.run_until_complete(process_user_input(user_input))
+                # loop.close()
                 
-                # Display AI response
-                st.markdown(response)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                # # # Display AI response
+                # st.markdown(response)
+                # st.session_state.messages.append({"role": "assistant", "content": response})
+                #if user_input and st.button("Send"):
+                    #with st.spinner("Generating response..."):
+                        response = asyncio.run(async_wrapper(
+                            st.session_state.assistant.process_query, user_input
+                        ))
+                        #response = process_user_input(user_input)
+                        # if 'chat_history' not in st.session_state:
+                        #     st.session_state.chat_history = []
+                        # st.session_state.chat_history.append(("You", user_input))
+                        # st.session_state.chat_history.append(("Assistant", response))
+                        st.markdown(response)
+                        st.session_state.messages.append({"role": "assistant", "content": response})
     
 #######################################################################
 # Sidebar Navigation
@@ -976,8 +1000,6 @@ with st.sidebar:
     
     if st.button("Dashboard", key="dashboard_btn"):
         st.session_state.page = "Dashboard"
-    if st.button("Stocks", key="stocks_btn"):
-        st.session_state.page = "Stocks"
     if st.button("Equity Report", key="report_btn"):
         st.session_state.page = "Equity Report"
     if st.button("Portfolio Analysis", key="portfolio_btn"):
@@ -988,8 +1010,8 @@ with st.sidebar:
 # Main content based on selected page
 if st.session_state.page == "Dashboard":
     show_dashboard()
-elif st.session_state.page == "Stocks":
-    show_stocks()
+# elif st.session_state.page == "Stocks":
+#     show_stocks()
 elif st.session_state.page == "Equity Report":
     show_equity_report()
 elif st.session_state.page == "Portfolio Analysis":

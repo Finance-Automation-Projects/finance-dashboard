@@ -1,14 +1,17 @@
 openai
-streamlit
 pandas
 yfinance
 plotly
+streamlit
 requests
 beautifulsoup4
 langchain-openai
 langchain-anthropic
 langchain-groq
-empyrial
+empyrical-reloaded
+PyPortfolioOpt
+IPython
+fpdf
 langchain
 langchain-community
 tiktoken
@@ -24,4 +27,4 @@ langchain-groq
 langchain-chroma
 frontend
 pymupdf
-fitz
+sentence-transformers
