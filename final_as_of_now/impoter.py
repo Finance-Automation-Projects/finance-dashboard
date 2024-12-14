@@ -822,7 +822,7 @@ def rag_annual_report(state,query = ''):
 def peer_comparison_report(state,query = ''):
     ticker = state["ticker"]
     comparison = EnhancedComparison(ticker)
-    if query = '':
+    if query == '':
         query = f"Provide a comprehensive competitive analysis of {ticker} including sector dynamics and peer comparison."
     peer_report = comparison.enhanced_comparison(
         query
