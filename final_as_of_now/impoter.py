@@ -326,7 +326,7 @@ class NewsAnalyzer:
         
         return "\n\n".join(formatted_headlines)
 
-    def generate_analysis(self, headlines_df: pd.DataFrame) -> str:
+    def generate_analysis(self, headlines_df: pd.DataFrame, query = '') -> str:
         """Generate a comprehensive analysis using the LLM."""
         if headlines_df.empty:
             return "No recent headlines found for this ticker."
@@ -372,12 +372,13 @@ Please provide a comprehensive analysis that includes:
 - Identify potential risks and opportunities based on the available data
 
 Keep the analysis evidence-based and focused on both qualitative news impact and quantitative financial metrics."""
-
+        if query != '':  
+           prompt += "\n Additionally answer the following question: \n"+query
         response = self.llm.invoke([HumanMessage(content=prompt)])
         #print("SENTIMENT ANALYSIS",response.content)
         return response.content
     
-    def analyze(self, ticker: str) -> Dict[str, Any]:
+    def analyze(self, ticker: str, query = '') -> Dict[str, Any]:
         """Main analysis function that processes headlines and returns results."""
         # Get and process headlines
         recent_headlines = self.get_headlines(ticker)
@@ -389,7 +390,7 @@ Keep the analysis evidence-based and focused on both qualitative news impact and
             }
         
         # Generate comprehensive analysis
-        analysis = self.generate_analysis(recent_headlines)
+        analysis = self.generate_analysis(recent_headlines,query)
         #print("SENTIMENT ANALYSIS",analysis)
         return {
             "content": analysis,
@@ -800,40 +801,46 @@ class Overview:
 
 
 # Main analysis functions
-def analyze_sentiment(state):
+def analyze_sentiment(state,query = ''):
     ticker = state["ticker"]
     analyzer = NewsAnalyzer()
-    analysis_result = analyzer.analyze(ticker)
+    analysis_result = analyzer.analyze(ticker,query)
     print("SENTIMENT ANALYSIS===================",analysis_result["content"])
     return {"sentiment_analysis": analysis_result["content"]}
 
-def rag_annual_report(state):
+def rag_annual_report(state,query = ''):
     ticker = state["ticker"]
     analyzer = AnnualReportAnalyzer(ticker)
+    if query == '':
+        query = f"Give me a comprehensive analysis of {ticker}'s financial performance and future outlook."
     analysis_result = analyzer.analyze_annual_report(
-        f"Give me a comprehensive analysis of {ticker}'s financial performance and future outlook."
+        query
     )
     print("ANNUAL REPORT=================",analysis_result)
     return {"annual_report_summary": analysis_result}
 
-def peer_comparison_report(state):
+def peer_comparison_report(state,query = ''):
     ticker = state["ticker"]
     comparison = EnhancedComparison(ticker)
+    if query = '':
+        query = f"Provide a comprehensive competitive analysis of {ticker} including sector dynamics and peer comparison."
     peer_report = comparison.enhanced_comparison(
-        f"Provide a comprehensive competitive analysis of {ticker} including sector dynamics and peer comparison."
+        query
     )
     print("PEER COMPARISION ANALYSIS=================",peer_report)
     return {"peer_comparison_report": peer_report}
 
-def company_overview_report(state):
+def company_overview_report(state,query = ''):
     ticker = state["ticker"]
     overview = Overview(ticker)
-    company_report = overview.company_report(f"Give me a comprehensive overview of {ticker}'s financial performance based on its metrics , stick to the facts and also report them,in your summary")
+    if query == '':
+        query = f"Give me a comprehensive overview of {ticker}'s financial performance based on its metrics , stick to the facts and also report them,in your summary"
+    company_report = overview.company_report(query)
     print("COMPANY OVERVIEW===============",company_report)
     return {"company_overview_report":company_report}
 
 # Optionally, add validation within the generate_equity_report function
-def generate_equity_report(state):
+def generate_equity_report(state,query = ''):
     if not all(k in state for k in ("sentiment_analysis", "annual_report_summary", "company_overview_report", "peer_comparison_report")):
         return {"equity_research_report": "Missing required data for report generation."}
     
@@ -845,6 +852,8 @@ def generate_equity_report(state):
         company_overview_report=state.get("company_overview_report", ""),
         peer_comparison_report=state.get("peer_comparison_report", "")
     )
+    if query != '':
+        prompt += "\n Additionally answer the following question: \n"+query
     report = llm.invoke([HumanMessage(content=prompt)])
     return {"equity_research_report": report.content}
 
