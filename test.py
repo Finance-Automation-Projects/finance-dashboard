@@ -321,36 +321,57 @@ class FinancialAssistant:
         return response
 
     async def process_query(self, query: str) -> str:
-        # Get query classification
-        classification = await self.query_classifier_chain.ainvoke({
-            "query": query,
-            "chat_history": self.memory.chat_memory.messages
-        })
-        
         try:
-            classification_dict = json.loads(classification)
-        except json.JSONDecodeError:
-            # Fallback to eval if JSON parsing fails
-            classification_dict = eval(classification)
+            # Get query classification with a timeout
+            classification = await asyncio.wait_for(
+                self.query_classifier_chain.ainvoke({
+                    "query": query,
+                    "chat_history": self.memory.chat_memory.messages
+                }),
+                timeout=10.0  # 10 seconds timeout
+            )
             
-        category = classification_dict["category"]
-        company = classification_dict["company"]
+            try:
+                classification_dict = json.loads(classification)
+            except (json.JSONDecodeError, TypeError):
+                # More robust error handling
+                classification_dict = {"category": "g", "company": None}
+                
+            category = classification_dict.get("category", "g")
+            company = classification_dict.get("company")
+            
+            state = {"query": query}
+            
+            # Add timeout to prevent hanging
+            try:
+                if category in ["a", "b", "c", "d", "e"]:
+                    if not company:
+                        return "I couldn't identify which company you're asking about. Could you please specify the company name?"
+                    response = await asyncio.wait_for(
+                        self._process_company_query(category, company, state),
+                        timeout=15.0
+                    )
+                elif category == "f":
+                    response = await asyncio.wait_for(
+                        self._process_portfolio_query(),
+                        timeout=10.0
+                    )
+                else:
+                    response = await asyncio.wait_for(
+                        self._handle_general_query(query),
+                        timeout=10.0
+                    )
+            except asyncio.TimeoutError:
+                return "I'm sorry, but the query took too long to process. Could you please try again?"
+            
+            self.memory.chat_memory.add_user_message(query)
+            self.memory.chat_memory.add_ai_message(response)
+            
+            return response
         
-        state = {"query": query}
-        
-        if category in ["a", "b", "c", "d", "e"]:
-            if not company:
-                return "I couldn't identify which company you're asking about. Could you please specify the company name?"
-            response = await self._process_company_query(category, company, state)
-        elif category == "f":
-            response = await self._process_portfolio_query()
-        else:
-            response = await self._handle_general_query(query)
-        
-        self.memory.chat_memory.add_user_message(query)
-        self.memory.chat_memory.add_ai_message(response)
-        
-        return response
+        except Exception as e:
+            # Catch-all error handling
+            return f"An unexpected error occurred: {str(e)}"
 
 async def main():
     assistant = FinancialAssistant(llm)

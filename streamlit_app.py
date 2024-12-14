@@ -693,7 +693,7 @@ def show_equity_report():
     #                 st.markdown(f"🗣️ **You:** {message}")
     #             else:
     #                 st.markdown(f"🤖 **Assistant:** {message}")
-                    
+                  
 def show_portfolio_analysis():
     st.title("Portfolio Analysis")
     
@@ -750,9 +750,13 @@ def show_portfolio_analysis():
                 portfolio=stocks,
                 weights=weights
             )
-
+            try:
+                st.session_state.assistant.portfolio = portfolio
+            except Exception as e:
+                print(e)
+                pass
             PortfolioAnalyser(portfolio, report=True)
-
+ 
             # View report PDF
             # Opening file from file path
             with open("report.pdf", "rb") as f:
@@ -875,7 +879,7 @@ def show_portfolio_analysis():
                 portfolio=stocks,
                 weights=weights
             )
-
+            
             stocks, weights = optimized_report(portfolio, optimize="Sharpe")
 
             st.subheader("Optimized Portfolio")
@@ -952,47 +956,83 @@ async def process_user_input(user_input: str):
     response = await st.session_state.assistant.process_query(user_input)
     return response
 
+# def ai_chatbot():
+#     st.title("Financial Assistant Chatbot")
+    
+#     # Initialize the assistant and chat history
+#     initialize_assistant()
+#     initialize_chat_history()
+    
+#     # Display chat history
+#     display_chat_history()
+    
+#     # Chat input
+#     if user_input := st.chat_input("What would you like to know about?"):
+#         # Display user message
+#         st.chat_message("user").markdown(user_input)
+#         st.session_state.messages.append({"role": "user", "content": user_input})
+        
+#         # Get AI response
+#         with st.chat_message("assistant"):
+#             with st.spinner("Thinking..."):
+#                 # Create event loop and run async function
+#                 # loop = asyncio.new_event_loop()
+#                 # asyncio.set_event_loop(loop)
+#                 # response = loop.run_until_complete(process_user_input(user_input))
+#                 # loop.close()
+                
+#                 # # # Display AI response
+#                 # st.markdown(response)
+#                 # st.session_state.messages.append({"role": "assistant", "content": response})
+#                 #if user_input and st.button("Send"):
+#                     #with st.spinner("Generating response..."):
+#                         response = asyncio.run(async_wrapper(
+#                             st.session_state.assistant.process_query, user_input
+#                         ))
+#                         #response = process_user_input(user_input)
+#                         # if 'chat_history' not in st.session_state:
+#                         #     st.session_state.chat_history = []
+#                         # st.session_state.chat_history.append(("You", user_input))
+#                         # st.session_state.chat_history.append(("Assistant", response))
+#                         st.markdown(response)
+#                         st.session_state.messages.append({"role": "assistant", "content": response})
+
+
+async def async_wrapper(func, *args, **kwargs):
+    """Wrapper to run async functions in Streamlit"""
+    return await func(*args, **kwargs)
+
 def ai_chatbot():
     st.title("Financial Assistant Chatbot")
-    
+   
     # Initialize the assistant and chat history
     initialize_assistant()
     initialize_chat_history()
-    
+   
     # Display chat history
     display_chat_history()
-    
+   
     # Chat input
     if user_input := st.chat_input("What would you like to know about?"):
         # Display user message
         st.chat_message("user").markdown(user_input)
         st.session_state.messages.append({"role": "user", "content": user_input})
-        
+       
         # Get AI response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                # Create event loop and run async function
-                # loop = asyncio.new_event_loop()
-                # asyncio.set_event_loop(loop)
-                # response = loop.run_until_complete(process_user_input(user_input))
-                # loop.close()
-                
-                # # # Display AI response
-                # st.markdown(response)
-                # st.session_state.messages.append({"role": "assistant", "content": response})
-                #if user_input and st.button("Send"):
-                    #with st.spinner("Generating response..."):
-                        response = asyncio.run(async_wrapper(
-                            st.session_state.assistant.process_query, user_input
-                        ))
-                        #response = process_user_input(user_input)
-                        # if 'chat_history' not in st.session_state:
-                        #     st.session_state.chat_history = []
-                        # st.session_state.chat_history.append(("You", user_input))
-                        # st.session_state.chat_history.append(("Assistant", response))
-                        st.markdown(response)
-                        st.session_state.messages.append({"role": "assistant", "content": response})
-    
+                try:
+                    # Use asyncio.run() in a more controlled manner
+                    response = asyncio.run(
+                        async_wrapper(
+                            st.session_state.assistant.process_query, 
+                            user_input
+                        )
+                    )
+                    st.markdown(response)
+                    st.session_state.messages.append({"role": "assistant", "content": response})
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
 #######################################################################
 # Sidebar Navigation
 with st.sidebar:
