@@ -12,7 +12,7 @@ empyrical-reloaded
 PyPortfolioOpt
 IPython
 fpdf
-langchain
+langchain==0.3.7
 langchain-community
 tiktoken
 langchain-nomic

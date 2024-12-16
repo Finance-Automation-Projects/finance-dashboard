@@ -166,9 +166,9 @@ import tempfile
 os.environ["GROQ_API_KEY"] = "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"
 GROQ_API_KEY = "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"  # Replace with your actual API key
  
-os.environ["TAVILY_API_KEY"] = "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"
-TAVILY_API_KEY = "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"  
-tavily_api_key = "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" #change this
+os.environ["TAVILY_API_KEY"] = "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"
+TAVILY_API_KEY = "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"  
+tavily_api_key = "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" #change this
 
 # Initialize Groq LLM
 llm = ChatGroq(
@@ -258,7 +258,7 @@ class NewsAnalyzer:
             df_data = self.news_db.to_dataframe()
             if isinstance(df_data, tuple):
                 # If it's a tuple, take the first element assuming it's the DataFrame
-                df = df_data[1] if df_data else pd.DataFrame() #change
+                df = df_data[0] if df_data else pd.DataFrame() #change
             else:
                 df = df_data
 

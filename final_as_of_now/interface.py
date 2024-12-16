@@ -133,6 +133,9 @@ class NewsDatabase:
         query = "SELECT * FROM stock_news_results"
 
         self.df2 = pd.read_sql_query(query, self.connection2)
+
+        if 'stock_symbol' not in self.df2.columns:
+            self.df2['stock_symbol'] = self.df2['ticker']
         return self.df,self.df2
 
     def get_values_by_ticker(self, ticker):

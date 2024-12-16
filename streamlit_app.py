@@ -934,7 +934,7 @@ def initialize_assistant():
     if 'assistant' not in st.session_state:
         llm = ChatGroq(
             temperature=0.1,
-            model_name="llama-3.2-90b-text-preview",
+            model_name="llama-3.3-70b-versatile",
             groq_api_key=GROQ_API_KEY,
             max_tokens=3000
         )
@@ -953,7 +953,11 @@ def display_chat_history():
 
 async def process_user_input(user_input: str):
     """Process the user input and get AI response"""
-    response = await st.session_state.assistant.process_query(user_input)
+    chat_history = [
+        {"role": msg["role"], "content": msg["content"]} 
+        for msg in st.session_state.messages
+    ]
+    response = await st.session_state.assistant.process_query(query = user_input, chat_history=chat_history)
     return response
 
 # def ai_chatbot():
@@ -998,9 +1002,9 @@ async def process_user_input(user_input: str):
 #                         st.session_state.messages.append({"role": "assistant", "content": response})
 
 
-async def async_wrapper(func, *args, **kwargs):
-    """Wrapper to run async functions in Streamlit"""
-    return await func(*args, **kwargs)
+# async def async_wrapper(func, *args, **kwargs):
+#     """Wrapper to run async functions in Streamlit"""
+#     return await func(*args, **kwargs)
 
 def ai_chatbot():
     st.title("Financial Assistant Chatbot")
@@ -1024,8 +1028,7 @@ def ai_chatbot():
                 try:
                     # Use asyncio.run() in a more controlled manner
                     response = asyncio.run(
-                        async_wrapper(
-                            st.session_state.assistant.process_query, 
+                        process_user_input(
                             user_input
                         )
                     )

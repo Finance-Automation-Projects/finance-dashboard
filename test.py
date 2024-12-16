@@ -200,6 +200,9 @@ import json
 import os
 import asyncio
 
+
+GROQ_API_KEY = "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"
+
 # # Import your functions
 # from final_as_of_now.impoter import *
 
@@ -396,7 +399,8 @@ import asyncio
 import asyncio
 import json
 from typing import Dict, Any, List, Optional, TypedDict
-from langchain_core.output_parsers import JsonOutputParser,StrOutputParser
+from langchain.output_parsers.json import SimpleJsonOutputParser
+from langchain.schema.output_parser import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import BaseTool
@@ -405,16 +409,59 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 
 # Import from your impoter file (assumed to contain these)
-from final_as_of_now.impoter import (
-    company_overview_report, 
-    peer_comparison_report, 
-    analyze_sentiment, 
-    generate_equity_report, 
-    rag_annual_report,
-    retrieve_values,
-    llm  # Assuming the LLM is imported here
-)
+from final_as_of_now.impoter import * #(
+#     company_overview_report, 
+#     peer_comparison_report, 
+#     analyze_sentiment, 
+#     generate_equity_report, 
+#     rag_annual_report,
+#     #retrieve_values,
+#     llm  # Assuming the LLM is imported here
+# )
 
+import asyncio
+import json
+from typing import Dict, Any, List, Optional, TypedDict
+#from langchain.output_parsers import JSONOutputParser, StrOutputParser
+from langchain_core.output_parsers.json import JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser,StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.tools import BaseTool
+from langchain_community.tools import TavilySearchResults
+from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.graph import StateGraph, END
+from langchain_core.tools import StructuredTool
+from typing import Dict, Any, Optional
+
+# Import from your impoter file (assumed to contain these)
+from final_as_of_now.impoter import *
+from PortfolioAnalyser import return_values as retrieve_values
+
+
+# class CustomTool(BaseTool):
+#     """Custom tool implementation that properly extends BaseTool"""
+    
+#     name: str = Field(description="The name of the tool")
+#     description: str = Field(description="The description of the tool")
+#     func: Callable = Field(exclude=True)  # Private field to store the function
+    
+#     def __init__(self, name: str, func: Callable, description: str):
+#         """Initialize the custom tool"""
+#         # Store the function in the private field
+#         self.func = func
+#         # Initialize the parent class
+#         super().__init__(name=name, description=description)
+
+#     def _run(self, query: str) -> Any:
+#         """Required implementation of the abstract _run method"""
+#         return self.func({"query": query})
+
+#     async def _arun(self, query: str) -> Any:
+#         """Async implementation"""
+#         # Default async implementation calls the sync version
+#         return self._run(query)
+    
 class FinancialAssistant:
     def __init__(self, 
                  llm, 
@@ -434,13 +481,31 @@ class FinancialAssistant:
         # Create the workflow graph
         self.workflow = self._create_workflow()
 
-    def _create_tools(self) -> List[BaseTool]:
+    def _create_tools(self):
         def create_tool(name, func, description):
-            return BaseTool(
+            def _run(state: Dict[str, Any], tool_query: Optional[str] = None) -> Dict[str, Any]:
+                """
+                Wrapper function to handle tool execution
+                
+                :param state: The current state dictionary
+                :param tool_query: Optional specific query for the tool
+                :return: Tool execution result
+                """
+                try:
+                    # If the original function expects a state and query parameter
+                    return func(state, query=tool_query or state.get('tool_query', ''))
+                except TypeError:
+                    # Fallback for functions that might not expect a query parameter
+                    try:
+                        return func(state)
+                    except Exception as e:
+                        return {"error": f"Tool execution failed: {str(e)}"}
+
+            return StructuredTool.from_function(
                 name=name,
-                func=lambda state: func(state, query=state.get('tool_query', '')),
+                func=_run,
                 description=description
-            )
+                )
         
         return [
             create_tool(
@@ -473,7 +538,8 @@ class FinancialAssistant:
                 lambda state, query='': {"portfolio_metrics": retrieve_values(self.portfolio)}, 
                 "Analyze the performance metrics of the user's portfolio"
             ),
-            BaseTool(
+
+            StructuredTool.from_function(
                 name="web_search",
                 func=lambda state: {
                     "web_search_results": self.tavily_search.invoke({
@@ -481,7 +547,18 @@ class FinancialAssistant:
                     })
                 },
                 description="Perform a web search to gather additional context"
-            )
+                )
+
+
+            # BaseTool(
+            #     name="web_search",
+            #     func=lambda state: {
+            #         "web_search_results": self.tavily_search.invoke({
+            #             "query": state.get('tool_query', state.get('query', ''))
+            #         })
+            #     },
+            #     description="Perform a web search to gather additional context"
+            # )
         ]
 
     def _create_tool_calling_llm(self):
@@ -645,6 +722,8 @@ class FinancialAssistant:
             return result.get('response', 'Unable to generate a response.')
         except Exception as e:
             return f"An error occurred: {str(e)}"
+        
+
 # Example usage
 async def main():
     # Initialize the assistant
