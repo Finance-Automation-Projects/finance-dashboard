@@ -6,107 +6,122 @@ from langchain.schema import HumanMessage
 from tavily import TavilyClient
 import pandas as pd
 from datetime import datetime
+import os
+from langchain.schema import HumanMessage
+from tavily import TavilyClient
+import pandas as pd
+from datetime import datetime
+import interface
+from typing import Any, Dict
+import numpy as np
+from langchain_groq import ChatGroq
+import warnings
+import yfinance as yf
+warnings.filterwarnings('ignore', category=UserWarning)
+
+# Or suppress specific warning messages
+warnings.filterwarnings('ignore', message="Detected filter using positional arguments. Prefer using the 'filter' keyword argument instead.")
 pwd = os.getcwd()
 # Get the directory in which this file is located
 module_import_path = os.path.join(pwd, "final_as_of_now")
 # interface is in the final_as_of_now folder
 
-from io import BytesIO
-import requests
-import fitz  # PyMuPDF
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-import logging
-from tqdm import tqdm
-def setup_logger():
-    """Set up logging configuration"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-    return logging.getLogger(__name__)
+# from io import BytesIO
+# import requests
+# import fitz  # PyMuPDF
+# from requests.adapters import HTTPAdapter
+# from urllib3.util.retry import Retry
+# import logging
+# from tqdm import tqdm
+# def setup_logger():
+#     """Set up logging configuration"""
+#     logging.basicConfig(
+#         level=logging.INFO,
+#         format='%(asctime)s - %(levelname)s - %(message)s'
+#     )
+#     return logging.getLogger(__name__)
 
-def get_firefox_headers():
-    """Return headers that mimic Firefox browser"""
-    return {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Cache-Control': 'max-age=0'
-    }
+# def get_firefox_headers():
+#     """Return headers that mimic Firefox browser"""
+#     return {
+#         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+#         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+#         'Accept-Language': 'en-US,en;q=0.5',
+#         'Accept-Encoding': 'gzip, deflate, br',
+#         'Connection': 'keep-alive',
+#         'Upgrade-Insecure-Requests': '1',
+#         'Sec-Fetch-Dest': 'document',
+#         'Sec-Fetch-Mode': 'navigate',
+#         'Sec-Fetch-Site': 'none',
+#         'Sec-Fetch-User': '?1',
+#         'Cache-Control': 'max-age=0'
+#     }
 
-def create_session_with_retries():
-    """Create a requests session with retry strategy"""
-    session = requests.Session()
-    retries = Retry(
-        total=5,
-        backoff_factor=1,
-        status_forcelist=[500, 502, 503, 504]
-    )
-    session.mount('https://', HTTPAdapter(max_retries=retries))
-    session.headers.update(get_firefox_headers())
-    return session
-def extract_text_from_pdf_url(url):
-    """
-    Extract text from a PDF URL without downloading to disk
+# def create_session_with_retries():
+#     """Create a requests session with retry strategy"""
+#     session = requests.Session()
+#     retries = Retry(
+#         total=5,
+#         backoff_factor=1,
+#         status_forcelist=[500, 502, 503, 504]
+#     )
+#     session.mount('https://', HTTPAdapter(max_retries=retries))
+#     session.headers.update(get_firefox_headers())
+#     return session
+# def extract_text_from_pdf_url(url):
+#     """
+#     Extract text from a PDF URL without downloading to disk
     
-    Args:
-        url (str): URL of the PDF file
+#     Args:
+#         url (str): URL of the PDF file
         
-    Returns:
-        str: Extracted text from the PDF
+#     Returns:
+#         str: Extracted text from the PDF
         
-    Raises:
-        requests.exceptions.RequestException: If download fails
-        fitz.FileDataError: If PDF processing fails
-    """
-    logger = setup_logger()
-    session = create_session_with_retries()
+#     Raises:
+#         requests.exceptions.RequestException: If download fails
+#         fitz.FileDataError: If PDF processing fails
+#     """
+#     logger = setup_logger()
+#     session = create_session_with_retries()
     
-    try:
-        # Get PDF content with progress bar
-        response = session.get(url, stream=True)
-        response.raise_for_status()
-        total_size = int(response.headers.get('content-length', 0))
+#     try:
+#         # Get PDF content with progress bar
+#         response = session.get(url, stream=True)
+#         response.raise_for_status()
+#         total_size = int(response.headers.get('content-length', 0))
         
-        # Download PDF into memory
-        pdf_data = BytesIO()
-        with tqdm(total=total_size, unit='iB', unit_scale=True,
-                 desc=f"Processing PDF from {url.split('/')[-1]}") as pbar:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    pdf_data.write(chunk)
-                    pbar.update(len(chunk))
+#         # Download PDF into memory
+#         pdf_data = BytesIO()
+#         with tqdm(total=total_size, unit='iB', unit_scale=True,
+#                  desc=f"Processing PDF from {url.split('/')[-1]}") as pbar:
+#             for chunk in response.iter_content(chunk_size=8192):
+#                 if chunk:
+#                     pdf_data.write(chunk)
+#                     pbar.update(len(chunk))
         
-        # Reset BytesIO position
-        pdf_data.seek(0)
+#         # Reset BytesIO position
+#         pdf_data.seek(0)
         
-        # Extract text from PDF in memory
-        pdf_document = fitz.open(stream=pdf_data, filetype="pdf")
-        text = ""
-        for page_num in range(len(pdf_document)):
-            page = pdf_document.load_page(page_num)
-            text += page.get_text()
+#         # Extract text from PDF in memory
+#         pdf_document = fitz.open(stream=pdf_data, filetype="pdf")
+#         text = ""
+#         for page_num in range(len(pdf_document)):
+#             page = pdf_document.load_page(page_num)
+#             text += page.get_text()
         
-        logger.info(f"Successfully extracted text from PDF at {url}")
-        return text
+#         logger.info(f"Successfully extracted text from PDF at {url}")
+#         return text
         
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error downloading PDF: {str(e)}")
-        raise
-    except Exception as e:
-        logger.error(f"Error processing PDF: {str(e)}")
-        raise
-    finally:
-        if 'pdf_document' in locals():
-            pdf_document.close()
+#     except requests.exceptions.RequestException as e:
+#         logger.error(f"Error downloading PDF: {str(e)}")
+#         raise
+#     except Exception as e:
+#         logger.error(f"Error processing PDF: {str(e)}")
+#         raise
+#     finally:
+#         if 'pdf_document' in locals():
+#             pdf_document.close()
 
 import sys
 sys.path.append(module_import_path)
@@ -140,14 +155,19 @@ from langchain.schema import SystemMessage
 import tempfile
 ### 3. Agent Prompts
 
-GROQ_API_KEY = "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"  # Replace with your actual API key
-TAVLY_API_KEY = "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"
+# KEYS
+os.environ["GROQ_API_KEY"] = "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"
+GROQ_API_KEY = "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"  # Replace with your actual API key
+ 
+os.environ["TAVILY_API_KEY"] = "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"
+TAVILY_API_KEY = "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"  
+tavily_api_key = "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" #change this
 
 # Initialize Groq LLM
 llm = ChatGroq(
     api_key = GROQ_API_KEY,
     temperature=0,
-    model_name="llama-3.2-90b-text-preview"  
+    model_name="llama-3.3-70b-versatile"  
 )
 # Report Generator
 
@@ -211,12 +231,12 @@ Ensure your analysis is data-driven, balanced, and provides clear rationale for 
 
 # [NewsAnalyzer class implementation remains the same as before]
 class NewsAnalyzer:
-    def __init__(self, model_name: str = "llama-3.2-90b-text-preview", groq_api_key:str = GROQ_API_KEY, tavily_api_key: str = TAVLY_API_KEY):
+    def __init__(self, model_name: str = "llama-3.3-70b-versatile", groq_api_key:str = GROQ_API_KEY, tavily_api_key: str = TAVILY_API_KEY):
         """Initialize the news analyzer with LLM and Tavily API."""
         self.llm = ChatGroq(
             api_key=groq_api_key,   
             temperature=0,
-            model_name="llama-3.2-90b-text-preview"
+            model_name="llama-3.3-70b-versatile"
         )
         self.tavily_client = TavilyClient(api_key=tavily_api_key or os.getenv("TAVILY_API_KEY"))
         self.news_db = interface.NewsDatabase()
@@ -231,7 +251,7 @@ class NewsAnalyzer:
             df_data = self.news_db.to_dataframe()
             if isinstance(df_data, tuple):
                 # If it's a tuple, take the first element assuming it's the DataFrame
-                df = df_data[0] if df_data else pd.DataFrame()
+                df = df_data[1] if df_data else pd.DataFrame() #change
             else:
                 df = df_data
 
@@ -396,93 +416,142 @@ Keep the analysis evidence-based and focused on both qualitative news impact and
             "content": analysis,
             "sentiment_scores": recent_headlines['Sentiment'].tolist()
         }
-def initialize_firestore(setup_file):
+# def initialize_firestore(setup_file):
+#     try:
+#         # Check if Firebase apps have already been initialized
+#         #if not firebase_admin._apps:
+#             cred = credentials.Certificate(setup_file)
+#             firebase_admin.initialize_app(cred)
+#         #else:
+#         #    print("Firebase app already initialized.")
+#     except Exception as e:
+#         print(e)
+#     db = firestore.client()
+#     return db
+# class FakeEmbeddings(Embeddings):
+#     def __init__(self, embedding):
+#         self.embedding = embedding
+
+#     def embed_documents(self, texts):
+#         return [self.embedding[0] for _ in texts]
+
+#     def embed_query(self, text):
+#         return self.embedding[0]
+# # [AnnualReportAnalyzer class implementation remains the same as before]
+# def fetch_financials(ticker):
+#     newpath = os.path.join(module_import_path, "secrets_Balaji.json")
+#     db = initialize_firestore(newpath)
+#     docs = db.collection("Stock Financial Data").limit(1).stream()
+#     doc = next(docs, None).to_dict()  # Get the first document from the iterator
+#     return doc[ticker]
+import chromadb
+
+def initialize_chromadb(db_path="./MasterDatabase"):
+    """Initialize ChromaDB client"""
     try:
-        # Check if Firebase apps have already been initialized
-        #if not firebase_admin._apps:
-            cred = credentials.Certificate(setup_file)
-            firebase_admin.initialize_app(cred)
-        #else:
-        #    print("Firebase app already initialized.")
+        client = chromadb.PersistentClient(db_path)
+        collection = client.get_collection("companies")  # Adjust collection name if different
+        return collection
     except Exception as e:
-        print(e)
-    db = firestore.client()
-    return db
-class FakeEmbeddings(Embeddings):
-    def __init__(self, embedding):
-        self.embedding = embedding
+        print(f"Error initializing ChromaDB: {e}")
+        return None
 
-    def embed_documents(self, texts):
-        return [self.embedding[0] for _ in texts]
+def unflatten_dict(d, sep='__'):
+    """
+    Unflattens a single-level dictionary back into a nested dictionary.
+    Keys split by `sep` become nested structures.
+    """
+    result = {}
+    for key, value in d.items():
+        parts = key.split(sep)
+        target = result
+        for part in parts[:-1]:
+            target = target.setdefault(part, {})
+        target[parts[-1]] = value
+    return result
 
-    def embed_query(self, text):
-        return self.embedding[0]
-# [AnnualReportAnalyzer class implementation remains the same as before]
 def fetch_financials(ticker):
-    newpath = os.path.join(module_import_path, "secrets_Balaji.json")
-    db = initialize_firestore(newpath)
-    docs = db.collection("Stock Financial Data").limit(1).stream()
-    doc = next(docs, None).to_dict()  # Get the first document from the iterator
-    return doc[ticker]
+    """Fetch financial data for a given ticker from ChromaDB"""
+    collection = initialize_chromadb()
+    if not collection:
+        raise Exception("Failed to initialize ChromaDB")
+    
+    result = collection.get(
+        ids=[ticker],
+        include=['metadatas', 'documents']
+    )
+    
+    if not result['ids']:
+        raise Exception(f"No data found for ticker: {ticker}")
+    
+    # Unflatten the metadata to match the original Firebase structure
+    return unflatten_dict(result['metadatas'][0])
 class AnnualReportAnalyzer:
-    def __init__(self, ticker, model_name: str = "llama-3.2-90b-text-preview", groq_api_key:str = GROQ_API_KEY,curtail_length:int = 10000):
+    def __init__(self, ticker, model_name: str = "llama-3.3-70b-versatile", groq_api_key: str = GROQ_API_KEY):
         self.llm = ChatGroq(
             api_key=groq_api_key,   
             temperature=0,
-            model_name="llama-3.2-90b-text-preview"
+            model_name="llama-3.3-70b-versatile"
         )
-        self.report_text = extract_text_from_pdf_url(fetch_financials(ticker)["report_url"])[:curtail_length]
         self.ticker = ticker
-        self.obtain_ragger()
-        
-    def obtain_ragger(self,model_name: str = "all-mpnet-base-v2",chunk_size: int = 4096, chunk_overlap: int = 200,k: int = 2) -> Chroma:
+        self.setup_retriever_from_chroma(ticker)
+
+    def setup_retriever_from_chroma(self, ticker):
         """
-        Chunks texts using CharacterTextSplitter and creates embeddings
+        Retrieves stock report data from ChromaDB for a specific ticker
+        and sets up a retriever.
         
         Args:
-            texts (List[str]): List of texts to process
-            model_name (str): Name of the model to use for embeddings
-            
-        Returns:
-            tuple: (List of document chunks, List of embeddings)
+            ticker (str): Stock ticker symbol
         """
-        # Convert texts to Document objects
-        doc = Document(page_content=self.report_text) 
-        
-        # Create text splitter
-        text_splitter = CharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
-        )
-            # Split document
-        splits = text_splitter.split_documents([doc])
-        
-        # Create embedding function
-        embedding_function = SentenceTransformerEmbeddings(model_name=model_name)
-        
-        # Create temporary directory for Chroma
-        persist_directory = tempfile.mkdtemp()
+        # Initialize ChromaDB client
+        client = chromadb.PersistentClient("./database")
         
         try:
-            # Create and persist Chroma vector store
-            vectorstore = Chroma.from_documents(
-                documents=splits,
-                embedding=embedding_function,
-                persist_directory=persist_directory
+            # Get collection for the ticker
+            collection = client.get_collection(ticker)
+            results = collection.get()
+            
+            if not results['documents']:
+                raise ValueError(f"No stock report found for ticker {ticker}")
+            
+            # Create Document objects
+            documents = [
+                Document(
+                    page_content=doc,
+                    metadata={'stock': ticker, 'chunk_id': str(idx)}
+                )
+                for idx, doc in enumerate(results['documents'])
+            ]
+            
+            # Create Chroma instance with documents
+            self.vectorstore = Chroma.from_documents(
+                documents=documents,
+                embedding=None,  # ChromaDB handles embeddings internally
+                persist_directory=f"./chroma_db_{ticker}"
             )
             
-            # Configure and return retriever
-            self.retriever = vectorstore.as_retriever(
-                search_type="similarity",
-                search_kwargs={"k": k}
-            )
+            # Set up retriever
+            self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 2})
+            
+            return self.retriever
+            
         except Exception as e:
-            # Clean up temporary directory if there's an error
-            if os.path.exists(persist_directory):
-                import shutil
-                shutil.rmtree(persist_directory)
-            raise e
-        return self.retriever
+            print(f"Warning: {str(e)}")
+            # Create a dummy document if no data is found
+            documents = [Document(
+                page_content=f"No text chunks available for {ticker}",
+                metadata={'stock': ticker, 'chunk_id': 'dummy'}
+            )]
+            
+            self.vectorstore = Chroma.from_documents(
+                documents=documents,
+                embedding=None,
+                persist_directory=f"./chroma_db_{ticker}"
+            )
+            self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 1})
+            return self.retriever
+
     def analyze_annual_report(self, query: str) -> str:
         try:
             system_prompt = """You are a financial expert and market analyst. Analyze the annual financial report 
@@ -517,12 +586,12 @@ class AnnualReportAnalyzer:
             print(f"Error in analyze_annual_report: {str(e)}")
             return f"Unable to analyze annual report for {self.ticker}. Please ensure the required data is available in the database."
 class SectorResearchAgent:
-    def __init__(self, tavily_api_key: str = TAVLY_API_KEY):
+    def __init__(self, tavily_api_key: str = TAVILY_API_KEY):
         self.tavily_client = TavilyClient(api_key=tavily_api_key)
         self.llm = ChatGroq(
             api_key=GROQ_API_KEY,
             temperature=0,
-            model_name="llama-3.2-90b-text-preview"
+            model_name="llama-3.3-70b-versatile"
         )
     
     def determine_company_sector(self, ticker: str) -> str:
@@ -642,7 +711,7 @@ class SectorResearchAgent:
         return "\n\n".join(findings) if findings else "No sector research data available."
 
 class EnhancedComparison:
-    def __init__(self, ticker, model_name: str = "llama-3.2-90b-text-preview", groq_api_key: str = GROQ_API_KEY):
+    def __init__(self, ticker, model_name: str = "llama-3.3-70b-versatile", groq_api_key: str = GROQ_API_KEY):
         self.llm = ChatGroq(
             api_key=groq_api_key,   
             temperature=0,
@@ -654,7 +723,7 @@ class EnhancedComparison:
         
     def enhanced_comparison(self, query: str) -> str:
         # Get peer comparison data
-        peer_data = self.financial_data["Peer Comparison"]
+        peer_data = self.financial_data.get("Peer_Comparison", {})
         rivals = [ticker_ for ticker_ in peer_data if ticker_ != self.ticker]
         
         # Determine sector through research
@@ -761,18 +830,18 @@ def get_stock_price_data(ticker: str) -> dict:
 
 # Modify the Overview class
 class Overview:
-    def __init__(self, ticker, model_name: str = "llama-3.2-90b-text-preview", groq_api_key: str = GROQ_API_KEY):
+    def __init__(self, ticker, model_name: str = "llama-3.3-70b-versatile", groq_api_key: str = GROQ_API_KEY):
         self.llm = ChatGroq(
             api_key=groq_api_key,
             temperature=0,
-            model_name="llama-3.2-90b-text-preview"
+            model_name="llama-3.3-70b-versatile"
         )
         self.ticker = ticker
         self.financial_data = fetch_financials(ticker)
         self.stock_price_data = get_stock_price_data(ticker)
         
     def company_report(self, query):
-        metrics = [metric for metric in self.financial_data if metric not in ["Peer Comparison", "report_url"]]
+        metrics = [metric for metric in self.financial_data if metric not in ["Peer_Comparison", "report_url"]]
         
         # Add stock price data to system prompt
         system_prompt = (
