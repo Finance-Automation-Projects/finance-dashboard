@@ -26,6 +26,10 @@ This project aims to streamline and automate the role of a market research analy
 4. **Chatbot Interface**:
    - Built using Langchain to classify user intents.
    - Routes queries to appropriate agents for financial overviews, peer comparison, sentiment analysis, and portfolio insights.
+## Demo
+This is a demo of our project:
+[Demo](https://drive.google.com/file/d/1cb9hRBdkvU59sqgm_DuuIguV31BW_4UJ/view?usp=sharing)
+
 
 ## Technology Stack
 - **Data Scraping**: BeautifulSoup, Selenium
