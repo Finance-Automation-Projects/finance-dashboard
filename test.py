@@ -396,7 +396,7 @@ import asyncio
 import asyncio
 import json
 from typing import Dict, Any, List, Optional, TypedDict
-from langchain_core.output_parsers import JSONOutputParser,StrOutputParser
+from langchain_core.output_parsers import JsonOutputParser,StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import BaseTool
@@ -529,7 +529,7 @@ class FinancialAssistant:
             chain = (
                 prompt 
                 | self.llm 
-                | JSONOutputParser()
+                | JsonOutputParser()
             )
 
             # Generate tool-specific queries

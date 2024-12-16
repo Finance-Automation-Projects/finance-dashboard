@@ -7,10 +7,17 @@ from tavily import TavilyClient
 import pandas as pd
 from datetime import datetime
 import os
+import sys
 from langchain.schema import HumanMessage
 from tavily import TavilyClient
 import pandas as pd
 from datetime import datetime
+
+pwd = os.getcwd()
+# Get the directory in which this file is located
+module_import_path = os.path.join(pwd, "final_as_of_now")
+sys.path.append(module_import_path)
+
 import interface
 from typing import Any, Dict
 import numpy as np
@@ -23,7 +30,7 @@ warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', message="Detected filter using positional arguments. Prefer using the 'filter' keyword argument instead.")
 pwd = os.getcwd()
 # Get the directory in which this file is located
-module_import_path = os.path.join(pwd, "final_as_of_now")
+#module_import_path = os.path.join(pwd, "final_as_of_now")
 # interface is in the final_as_of_now folder
 
 # from io import BytesIO
